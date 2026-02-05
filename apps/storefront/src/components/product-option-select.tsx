@@ -1,6 +1,6 @@
-import { HttpTypes } from "@medusajs/types";
-import { clsx } from "clsx";
-import React from "react";
+import { HttpTypes } from "@medusajs/types"
+import { clsx } from "clsx"
+import React from "react"
 
 type ProductOptionSelectProps = {
   option: HttpTypes.StoreProductOption;
@@ -19,11 +19,11 @@ const ProductOptionSelect: React.FC<ProductOptionSelectProps> = ({
   "data-testid": dataTestId,
   disabled,
 }) => {
-  const filteredOptions = (option.values ?? []).map((v) => v.value);
-  const isColorOption = title.toLowerCase() === "color";
+  const filteredOptions = (option.values ?? []).map((v) => v.value)
+  const isColorOption = title.toLowerCase() === "color"
 
   // Get selected color name for display
-  const selectedColorName = isColorOption && current ? current : null;
+  const selectedColorName = isColorOption && current ? current : null
 
   return (
     <div className="flex flex-col gap-y-3">
@@ -35,7 +35,7 @@ const ProductOptionSelect: React.FC<ProductOptionSelectProps> = ({
         data-testid={dataTestId}
       >
         {filteredOptions.map((v) => {
-          const isActive = v === current;
+          const isActive = v === current
           
           // Color option styling
           if (isColorOption) {
@@ -56,7 +56,7 @@ const ProductOptionSelect: React.FC<ProductOptionSelectProps> = ({
                 title={v}
                 style={{ backgroundColor: getColorValue(v) }}
               />
-            );
+            )
           }
 
           // Default button styling
@@ -80,12 +80,12 @@ const ProductOptionSelect: React.FC<ProductOptionSelectProps> = ({
             >
               {v}
             </button>
-          );
+          )
         })}
       </div>
     </div>
-  );
-};
+  )
+}
 
 // Helper function to get color value from color name
 function getColorValue(colorName: string): string {
@@ -128,10 +128,10 @@ function getColorValue(colorName: string): string {
     yellow: "#ffd700",
     orange: "#ff8c00",
     purple: "#800080",
-  };
+  }
 
-  const normalized = colorName.toLowerCase();
-  return colorMap[normalized] || "#e5e5e5";
+  const normalized = colorName.toLowerCase()
+  return colorMap[normalized] || "#e5e5e5"
 }
 
-export default ProductOptionSelect;
+export default ProductOptionSelect

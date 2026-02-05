@@ -4,6 +4,7 @@ import { FilterDrawer, FilterState } from "@/components/filter-drawer"
 import { useProducts, useProductCount } from "@/lib/hooks/use-products"
 import { useLoaderData } from "@tanstack/react-router"
 import { useState, useEffect, useMemo } from "react"
+import { HttpTypes } from "@medusajs/types"
 
 type ViewMode = "list" | "grid"
 
@@ -21,7 +22,7 @@ const AVAILABLE_COLORS = [
 
 const Store = () => {
   const { region } = useLoaderData({ from: "/$countryCode/store" })
-  const [viewMode, setViewMode] = useState<ViewMode>("list")
+  const [viewMode] = useState<ViewMode>("list")
   const [controlsVisible, setControlsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
   const [sortDrawerOpen, setSortDrawerOpen] = useState(false)
@@ -60,30 +61,30 @@ const Store = () => {
 
   const { data: productCount } = useProductCount({ region_id: region.id })
 
-  const rawProducts = data?.pages.flatMap((page) => page.products) || []
-
   // Filter and sort products
   const products = useMemo(() => {
+    const rawProducts = data?.pages.flatMap((page) => page.products) || []
     let filtered = [...rawProducts]
     
     // Apply color filter
     if (filters.colors.length > 0) {
       filtered = filtered.filter((product) => {
         // Check if any variant has a matching color option
-        return product.variants?.some((variant: any) => {
-          return variant.options?.some((opt: any) => 
-            opt.option?.title === "Color" && filters.colors.includes(opt.value)
-          )
+        return product.variants?.some((variant) => {
+          return variant.options?.some((opt) => {
+            const optionWithTitle = opt as typeof opt & { option?: { title?: string } }
+            return optionWithTitle.option?.title === "Color" && filters.colors.includes(opt.value ?? "")
+          })
         })
       })
     }
-    
+
     // Apply in-stock filter
     if (filters.inStock) {
       filtered = filtered.filter((product) => {
-        return product.variants?.some((variant: any) => {
+        return product.variants?.some((variant) => {
           // Check if variant is in stock (inventory quantity > 0 or not managed)
-          return variant.inventory_quantity > 0 || !variant.manage_inventory
+          return (variant.inventory_quantity ?? 0) > 0 || !variant.manage_inventory
         })
       })
     }
@@ -127,7 +128,7 @@ const Store = () => {
         // Featured keeps original/API order
         return sorted
     }
-  }, [rawProducts, currentSort, filters])
+  }, [data?.pages, currentSort, filters])
 
   return (
     <div className="bg-white min-h-screen overflow-x-hidden leading-none">
@@ -219,15 +220,15 @@ const Store = () => {
 }
 
 // Grid view fallback
-const GridView = ({ 
-  products, 
-  hasNextPage, 
-  isFetchingNextPage, 
-  fetchNextPage 
-}: { 
-  products: any[], 
-  hasNextPage: boolean | undefined, 
-  isFetchingNextPage: boolean,
+const GridView = ({
+  products,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage
+}: {
+  products: HttpTypes.StoreProduct[]
+  hasNextPage: boolean | undefined
+  isFetchingNextPage: boolean
   fetchNextPage: () => void
 }) => {
   const { countryCode } = useLoaderData({ from: "/$countryCode/store" })
@@ -237,8 +238,8 @@ const GridView = ({
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10 pt-8">
         {products.map((product) => {
           // Get thumbnail from first variant's images
-          const firstVariant = product.variants?.[0] as any
-          const variantImages = firstVariant?.images as { url: string }[] | undefined
+          const firstVariant = product.variants?.[0] as HttpTypes.StoreProductVariant & { images?: { url: string }[] }
+          const variantImages = firstVariant?.images
           const thumbnail = variantImages?.[0]?.url || product.thumbnail
           
           return (

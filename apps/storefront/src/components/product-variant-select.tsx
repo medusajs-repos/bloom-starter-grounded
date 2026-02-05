@@ -1,6 +1,6 @@
-import { HttpTypes } from "@medusajs/types";
-import { clsx } from "clsx";
-import React from "react";
+import { HttpTypes } from "@medusajs/types"
+import { clsx } from "clsx"
+import React from "react"
 
 type ProductVariantSelectProps = {
   variants: HttpTypes.StoreProductVariant[];
@@ -20,34 +20,34 @@ const ProductVariantSelect: React.FC<ProductVariantSelectProps> = ({
   // Check if variants have a color option
   const hasColorOption = variants.some((v) =>
     v.options?.some((o) => o.option?.title?.toLowerCase() === "color")
-  );
+  )
 
   // Get the variant's display name (use color if available, otherwise first option value or title)
   const getVariantLabel = (variant: HttpTypes.StoreProductVariant): string => {
     const colorOption = variant.options?.find(
       (o) => o.option?.title?.toLowerCase() === "color"
-    );
+    )
     if (colorOption) {
-      return colorOption.value ?? variant.title ?? "Variant";
+      return colorOption.value ?? variant.title ?? "Variant"
     }
     // Fall back to first option value or title
-    const firstOption = variant.options?.[0];
-    return firstOption?.value ?? variant.title ?? "Variant";
-  };
+    const firstOption = variant.options?.[0]
+    return firstOption?.value ?? variant.title ?? "Variant"
+  }
 
   // Get color value for color swatches
   const getVariantColor = (variant: HttpTypes.StoreProductVariant): string | null => {
     const colorOption = variant.options?.find(
       (o) => o.option?.title?.toLowerCase() === "color"
-    );
+    )
     if (colorOption?.value) {
-      return getColorValue(colorOption.value);
+      return getColorValue(colorOption.value)
     }
-    return null;
-  };
+    return null
+  }
 
-  const selectedVariant = variants.find((v) => v.id === selectedVariantId);
-  const selectedLabel = selectedVariant ? getVariantLabel(selectedVariant) : null;
+  const selectedVariant = variants.find((v) => v.id === selectedVariantId)
+  const selectedLabel = selectedVariant ? getVariantLabel(selectedVariant) : null
 
   return (
     <div className="flex flex-col gap-y-3">
@@ -56,9 +56,9 @@ const ProductVariantSelect: React.FC<ProductVariantSelectProps> = ({
       </span>
       <div className="flex flex-wrap gap-2" data-testid={dataTestId}>
         {variants.map((variant) => {
-          const isActive = variant.id === selectedVariantId;
-          const color = getVariantColor(variant);
-          const label = getVariantLabel(variant);
+          const isActive = variant.id === selectedVariantId
+          const color = getVariantColor(variant)
+          const label = getVariantLabel(variant)
 
           // Color swatch styling
           if (hasColorOption && color) {
@@ -79,10 +79,10 @@ const ProductVariantSelect: React.FC<ProductVariantSelectProps> = ({
                 title={label}
                 style={{ 
                   backgroundColor: color,
-                  boxShadow: 'inset 0 0 0 0.5px rgba(0, 0, 0, 0.1)'
+                  boxShadow: "inset 0 0 0 0.5px rgba(0, 0, 0, 0.1)"
                 }}
               />
-            );
+            )
           }
 
           // Default button styling for non-color variants
@@ -104,12 +104,12 @@ const ProductVariantSelect: React.FC<ProductVariantSelectProps> = ({
             >
               {label}
             </button>
-          );
+          )
         })}
       </div>
     </div>
-  );
-};
+  )
+}
 
 // Helper function to get color value from color name
 function getColorValue(colorName: string): string {
@@ -158,10 +158,10 @@ function getColorValue(colorName: string): string {
     yellow: "#ffd700",
     orange: "#ff8c00",
     purple: "#800080",
-  };
+  }
 
-  const normalized = colorName.toLowerCase();
-  return colorMap[normalized] || "#e5e5e5";
+  const normalized = colorName.toLowerCase()
+  return colorMap[normalized] || "#e5e5e5"
 }
 
-export default ProductVariantSelect;
+export default ProductVariantSelect

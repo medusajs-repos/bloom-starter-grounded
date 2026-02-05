@@ -8,18 +8,18 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
-  const location = useLocation();
-  const countryCode = getCountryCodeFromPath(location.pathname);
-  const baseHref = countryCode ? `/${countryCode}` : "";
+  const location = useLocation()
+  const countryCode = getCountryCodeFromPath(location.pathname) || "us"
 
   // Get thumbnail from first variant's images, fallback to product thumbnail
-  const firstVariant = product.variants?.[0] as any;
-  const variantImages = firstVariant?.images as { url: string }[] | undefined;
-  const thumbnail = variantImages?.[0]?.url || product.thumbnail;
+  const firstVariant = product.variants?.[0] as (ProductCardProps & { images?: { url: string }[] }) | undefined
+  const variantImages = firstVariant?.images
+  const thumbnail = variantImages?.[0]?.url || product.thumbnail
 
   return (
     <Link
-      to={`${baseHref}/products/${product.handle}` as any}
+      to="/$countryCode/products/$handle"
+      params={{ countryCode, handle: product.handle || "" as string }}
       className="group flex flex-col w-full"
     >
       {/* Image container */}
@@ -54,7 +54,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         />
       </div>
     </Link>
-  );
-};
+  )
+}
 
-export default ProductCard;
+export default ProductCard

@@ -18,8 +18,7 @@ interface ColorVariantImage {
 
 const ProductMobileCard = ({ product, isLast = false }: ProductMobileCardProps) => {
   const location = useLocation()
-  const countryCode = getCountryCodeFromPath(location.pathname)
-  const baseHref = countryCode ? `/${countryCode}` : ""
+  const countryCode = getCountryCodeFromPath(location.pathname) || "us"
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   // Get color variant thumbnails - one per unique color
@@ -29,7 +28,7 @@ const ProductMobileCard = ({ product, isLast = false }: ProductMobileCardProps) 
     
     // Find the Color option
     const colorOption = product.options?.find(opt => 
-      opt.title?.toLowerCase() === 'color' || opt.title?.toLowerCase() === 'colour'
+      opt.title?.toLowerCase() === "color" || opt.title?.toLowerCase() === "colour"
     )
     
     if (!colorOption || !product.variants) {
@@ -43,7 +42,7 @@ const ProductMobileCard = ({ product, isLast = false }: ProductMobileCardProps) 
         seenColors.add(colorOptionValue.value)
         
         // Get images from variant.images array
-        const variantImages = (variant as any).images as { url: string }[] | undefined
+        const variantImages = (variant as { images?: { url: string }[] })?.images
         const thumbnail = variantImages?.[0]?.url || variant.thumbnail || product.thumbnail
         
         if (thumbnail) {
@@ -68,8 +67,8 @@ const ProductMobileCard = ({ product, isLast = false }: ProductMobileCardProps) 
     const seenUrls = new Set<string>()
     
     // Get images from first variant
-    const firstVariant = product.variants?.[0] as any
-    const variantImages = firstVariant?.images as { url: string }[] | undefined
+    const firstVariant = product.variants?.[0] as (ProductMobileCardProps & { images?: { url: string }[] }) | undefined
+    const variantImages = firstVariant?.images || undefined
     
     if (variantImages && variantImages.length > 0) {
       variantImages.forEach(img => {
@@ -112,22 +111,23 @@ const ProductMobileCard = ({ product, isLast = false }: ProductMobileCardProps) 
     return null
   }, [product])
 
-  const productHref = `${baseHref}/products/${product.handle}`
+  const productHref = "/$countryCode/products/$handle"
 
   return (
-    <div className={`py-4 border-b border-[#ebebeb] ${isLast ? 'border-b-0' : ''}`}>
+    <div className={`py-4 border-b border-[#ebebeb] ${isLast ? "border-b-0" : ""}`}>
       {/* Horizontal scrolling images */}
       <div 
         ref={scrollContainerRef}
         className="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-3"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {colorVariantImages.length > 0 ? (
           colorVariantImages.map((img) => (
             <Link
               key={`${product.id}-color-${img.colorValue}`}
-              to={productHref as any}
-              search={{ variant: img.variantId } as any}
+              to={productHref}
+              params={{ countryCode, handle: product.handle || "" as string }}
+              search={{ variant: img.variantId }}
               className="w-[120px] h-[150px] bg-[#f7f7f7] overflow-hidden relative flex-shrink-0"
             >
               <img
@@ -143,7 +143,8 @@ const ProductMobileCard = ({ product, isLast = false }: ProductMobileCardProps) 
           productImages.map((img, index) => (
             <Link
               key={`${product.id}-img-${index}`}
-              to={productHref as any}
+              to={productHref}
+              params={{ countryCode, handle: product.handle || "" as string }}
               className="w-[120px] h-[150px] bg-[#f7f7f7] overflow-hidden relative flex-shrink-0"
             >
               <img
@@ -163,7 +164,7 @@ const ProductMobileCard = ({ product, isLast = false }: ProductMobileCardProps) 
       </div>
 
       {/* Product info */}
-      <Link to={productHref as any} className="block px-4">
+      <Link to={productHref} params={{ countryCode, handle: product.handle || "" as string }} className="block px-4">
         <h3 className="text-[18px] font-medium text-[#1a1a1a] leading-tight">
           {product.title}
         </h3>

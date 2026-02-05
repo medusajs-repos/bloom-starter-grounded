@@ -1,6 +1,6 @@
-import { formatPrice } from "@/lib/utils/price";
-import { clsx } from "clsx";
-import { useMemo } from "react";
+import { formatPrice } from "@/lib/utils/price"
+import { clsx } from "clsx"
+import { useMemo } from "react"
 
 export type PriceProps = {
   price: number | string;
@@ -33,7 +33,7 @@ export const Price = ({
       return {
         formattedPrice: price,
         formattedSalePrice: originalPrice?.price,
-      };
+      }
     }
     return {
       formattedPrice:
@@ -47,8 +47,8 @@ export const Price = ({
               amount: originalPrice?.price || 0,
               currency_code: currencyCode,
             }),
-    };
-  }, [price, originalPrice, currencyCode]);
+    }
+  }, [price, originalPrice, currencyCode])
   return (
     <div className={clsx("flex flex-col justify-center", className?.includes("text-") ? "" : "text-neutral-900", className)}>
       {originalPrice && (
@@ -78,5 +78,5 @@ export const Price = ({
         </span>
       </span>
     </div>
-  );
-};
+  )
+}

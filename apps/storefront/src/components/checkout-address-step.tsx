@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { useSetCartAddresses } from "@/lib/hooks/use-checkout"
+import { AddressFormData } from "@/lib/types/global"
 import { getStoredCountryCode } from "@/lib/utils/region"
 import { HttpTypes } from "@medusajs/types"
 import { useEffect, useState } from "react"
@@ -13,14 +14,14 @@ interface AddressStepProps {
 }
 
 const AddressStep = ({ cart, onNext }: AddressStepProps) => {
-  const setAddressesMutation = useSetCartAddresses();
-  const [sameAsBilling, setSameAsBilling] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isShippingAddressValid, setIsShippingAddressValid] = useState(false);
-  const [isBillingAddressValid, setIsBillingAddressValid] = useState(false);
-  const [email, setEmail] = useState(cart.email || "");
-  const storedCountryCode = getStoredCountryCode();
-  const [shippingAddress, setShippingAddress] = useState<Record<string, any>>({
+  const setAddressesMutation = useSetCartAddresses()
+  const [sameAsBilling, setSameAsBilling] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isShippingAddressValid, setIsShippingAddressValid] = useState(false)
+  const [isBillingAddressValid, setIsBillingAddressValid] = useState(false)
+  const [email, setEmail] = useState(cart.email || "")
+  const storedCountryCode = getStoredCountryCode()
+  const [shippingAddress, setShippingAddress] = useState<AddressFormData>({
     first_name: cart.shipping_address?.first_name || "",
     last_name: cart.shipping_address?.last_name || "",
     company: cart.shipping_address?.company || "",
@@ -32,8 +33,8 @@ const AddressStep = ({ cart, onNext }: AddressStepProps) => {
     country_code:
       cart.shipping_address?.country_code || storedCountryCode || "",
     phone: cart.shipping_address?.phone || "",
-  });
-  const [billingAddress, setBillingAddress] = useState<Record<string, any>>({
+  })
+  const [billingAddress, setBillingAddress] = useState<AddressFormData>({
     first_name: cart.billing_address?.first_name || "",
     last_name: cart.billing_address?.last_name || "",
     company: cart.billing_address?.company || "",
@@ -44,76 +45,76 @@ const AddressStep = ({ cart, onNext }: AddressStepProps) => {
     province: cart.billing_address?.province || "",
     country_code: cart.billing_address?.country_code || storedCountryCode || "",
     phone: cart.billing_address?.phone || "",
-  });
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
-    if (isSubmitting) return;
+    if (isSubmitting) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
 
     try {
-      const submitData = new FormData();
+      const submitData = new FormData()
 
       // Add email
-      submitData.append("email", email);
+      submitData.append("email", email)
 
       // Add shipping address
       Object.entries(shippingAddress).forEach(([key, value]) => {
-        submitData.append(`shipping_address.${key}`, value);
-      });
+        submitData.append(`shipping_address.${key}`, value)
+      })
 
       // Add billing address (same as shipping if checkbox is checked)
-      const billingData = sameAsBilling ? shippingAddress : billingAddress;
+      const billingData = sameAsBilling ? shippingAddress : billingAddress
       Object.entries(billingData).forEach(([key, value]) => {
-        submitData.append(`billing_address.${key}`, value);
-      });
+        submitData.append(`billing_address.${key}`, value)
+      })
 
-      await setAddressesMutation.mutateAsync(submitData);
-      onNext();
+      await setAddressesMutation.mutateAsync(submitData)
+      onNext()
     } catch (error) {
-      console.error("Failed to set addresses:", error);
+      console.error("Failed to set addresses:", error)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const isFormValid = () => {
-    const emailValid = email.trim() && email.includes("@");
+    const emailValid = email.trim() && email.includes("@")
 
     return (
       emailValid &&
       isShippingAddressValid &&
       (isBillingAddressValid || sameAsBilling)
-    );
-  };
+    )
+  }
 
   useEffect(() => {
     if (!cart.region) {
-      return;
+      return
     }
 
     const isValidShippingAddressCountry = cart.region.countries?.some(
       (country) => country.iso_2 === shippingAddress.country_code
-    );
+    )
     if (!isValidShippingAddressCountry) {
       setShippingAddress((prev) => ({
         ...prev,
         country_code: storedCountryCode || "",
-      }));
+      }))
     }
 
     const isValidBillingAddressCountry = cart.region.countries?.some(
       (country) => country.iso_2 === billingAddress.country_code
-    );
+    )
     if (!isValidBillingAddressCountry) {
       setBillingAddress((prev) => ({
         ...prev,
         country_code: storedCountryCode || "",
-      }));
+      }))
     }
-  }, [cart.region, storedCountryCode]);
+  }, [cart.region, storedCountryCode, billingAddress.country_code, shippingAddress.country_code])
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -183,7 +184,7 @@ const AddressStep = ({ cart, onNext }: AddressStepProps) => {
         </Button>
       </div>
     </form>
-  );
-};
+  )
+}
 
-export default AddressStep;
+export default AddressStep

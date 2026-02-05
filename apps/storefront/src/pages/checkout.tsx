@@ -5,12 +5,10 @@ import ShippingItemSelector from "@/components/shipping-item-selector"
 import PaymentContainer from "@/components/payment-container"
 import StripeCardContainer from "@/components/stripe-card-container"
 import PaymentButton from "@/components/payment-button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import Radio from "@/components/ui/radio"
 import { Loading } from "@/components/ui/loading"
 import { useCart } from "@/lib/hooks/use-cart"
-import { Link, useParams } from "@tanstack/react-router"
 import {
   useSetCartAddresses,
   useSetCartShippingMethod,
@@ -21,10 +19,10 @@ import {
 import { getStoredCountryCode } from "@/lib/utils/region"
 import {
   isStripe as isStripeFunc,
-  getActivePaymentSession,
   isPaidWithGiftCard,
 } from "@/lib/utils/checkout"
 import { useCallback, useEffect, useState } from "react"
+import { AddressFormData } from "@/lib/types/global"
 
 const Checkout = () => {
   const { data: cart, isLoading: cartLoading } = useCart()
@@ -35,7 +33,7 @@ const Checkout = () => {
   const [sameAsBilling, setSameAsBilling] = useState(true)
   const [email, setEmail] = useState("")
   const [termsAccepted, setTermsAccepted] = useState(true)
-  const [shippingAddress, setShippingAddress] = useState<Record<string, any>>({
+  const [shippingAddress, setShippingAddress] = useState<AddressFormData>({
     first_name: "",
     last_name: "",
     company: "",
@@ -47,7 +45,7 @@ const Checkout = () => {
     country_code: storedCountryCode || "",
     phone: "",
   })
-  const [billingAddress, setBillingAddress] = useState<Record<string, any>>({
+  const [billingAddress, setBillingAddress] = useState<AddressFormData>({
     first_name: "",
     last_name: "",
     company: "",
@@ -126,15 +124,6 @@ const Checkout = () => {
     }
   }, [shippingOptions, selectedShippingOption])
 
-  // Auto-select first payment method
-  useEffect(() => {
-    if (!selectedPaymentMethod && availablePaymentMethods?.length > 0) {
-      const firstMethod = availablePaymentMethods[0].id
-      setSelectedPaymentMethod(firstMethod)
-      initiatePaymentSession(firstMethod)
-    }
-  }, [availablePaymentMethods, selectedPaymentMethod])
-
   const initiatePaymentSession = useCallback(
     async (method: string) => {
       initiatePaymentSessionMutation.mutate(
@@ -150,6 +139,15 @@ const Checkout = () => {
     },
     [initiatePaymentSessionMutation]
   )
+
+  // Auto-select first payment method
+  useEffect(() => {
+    if (!selectedPaymentMethod && availablePaymentMethods?.length > 0) {
+      const firstMethod = availablePaymentMethods[0].id
+      setSelectedPaymentMethod(firstMethod)
+      initiatePaymentSession(firstMethod)
+    }
+  }, [availablePaymentMethods, selectedPaymentMethod, initiatePaymentSession])
 
   const handlePaymentMethodChange = (method: string) => {
     setPaymentError(null)
@@ -169,7 +167,7 @@ const Checkout = () => {
     isEmailValid && isShippingAddressValid && (isBillingAddressValid || sameAsBilling)
 
   // Save address and shipping on blur/change
-  const handleSaveAddress = async () => {
+  const handleSaveAddress = useCallback(async () => {
     if (!isAddressFormValid) return
 
     const submitData = new FormData()
@@ -193,14 +191,14 @@ const Checkout = () => {
         shipping_option_id: selectedShippingOption,
       })
     }
-  }
+  }, [isAddressFormValid, email, shippingAddress, sameAsBilling, billingAddress, setAddressesMutation, selectedShippingOption, setShippingMethodMutation])
 
   // Auto-save when form becomes valid
   useEffect(() => {
     if (isAddressFormValid && !addressSaved && !setAddressesMutation.isPending) {
       handleSaveAddress()
     }
-  }, [isAddressFormValid, addressSaved])
+  }, [isAddressFormValid, addressSaved, setAddressesMutation.isPending, handleSaveAddress])
 
   if (cartLoading) {
     return (
@@ -277,15 +275,15 @@ const Checkout = () => {
               <label 
                 className="flex items-start gap-2 cursor-pointer"
                 onClick={(e) => {
-                  e.preventDefault();
-                  setTermsAccepted(!termsAccepted);
+                  e.preventDefault()
+                  setTermsAccepted(!termsAccepted)
                 }}
               >
                 <div 
                   className="mt-0.5 flex items-center justify-center cursor-pointer shrink-0"
-                  style={{ width: '15px', height: '15px', border: '1px solid black' }}
+                  style={{ width: "15px", height: "15px", border: "1px solid black" }}
                 >
-                  {termsAccepted && <div style={{ width: '7px', height: '7px', backgroundColor: 'black' }} />}
+                  {termsAccepted && <div style={{ width: "7px", height: "7px", backgroundColor: "black" }} />}
                 </div>
                 <span className="text-sm text-black">
                   If you do not wish to receive marketing or news about similar products from Grounded via email, you can opt out by removing the checkmark in the box.
@@ -313,15 +311,15 @@ const Checkout = () => {
               <label 
                 className="flex items-center gap-2 pt-2 cursor-pointer"
                 onClick={(e) => {
-                  e.preventDefault();
-                  setSameAsBilling(!sameAsBilling);
+                  e.preventDefault()
+                  setSameAsBilling(!sameAsBilling)
                 }}
               >
                 <div 
                   className="flex items-center justify-center cursor-pointer shrink-0"
-                  style={{ width: '15px', height: '15px', border: '1px solid black' }}
+                  style={{ width: "15px", height: "15px", border: "1px solid black" }}
                 >
-                  {sameAsBilling && <div style={{ width: '7px', height: '7px', backgroundColor: 'black' }} />}
+                  {sameAsBilling && <div style={{ width: "7px", height: "7px", backgroundColor: "black" }} />}
                 </div>
                 <span className="text-sm text-black">
                   Billing address same as shipping

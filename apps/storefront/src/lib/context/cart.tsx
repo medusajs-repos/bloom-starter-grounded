@@ -1,20 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from "react"
-
-type CartContextType = {
-  isOpen: boolean
-  openCart: () => void
-  closeCart: () => void
-}
-
-const CartContext = createContext<CartContextType | undefined>(undefined)
-
-export const useCartDrawer = () => {
-  const context = useContext(CartContext)
-  if (!context) {
-    throw new Error("useCartDrawer must be used within CartProvider")
-  }
-  return context
-}
+import { useState, ReactNode } from "react"
+import { CartContext } from "@/lib/hooks/use-cart-drawer"
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false)

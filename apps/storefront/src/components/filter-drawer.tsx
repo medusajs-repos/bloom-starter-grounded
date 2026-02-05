@@ -124,7 +124,7 @@ export const FilterDrawer = ({
                           checked={isSelected}
                           onChange={() => toggleColor(color)}
                           className="appearance-none border border-neutral-400 bg-transparent checked:border-neutral-400 cursor-pointer relative checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:w-[7px] checked:after:h-[7px] checked:after:bg-black checked:after:content-[''] mr-3 flex-shrink-0"
-                          style={{ borderRadius: 0, width: '15px', height: '15px', minWidth: '15px', minHeight: '15px' }}
+                          style={{ borderRadius: 0, width: "15px", height: "15px", minWidth: "15px", minHeight: "15px" }}
                         />
                         <span
                           className="text-[16px] leading-[100%] flex-1 text-left text-black"
@@ -134,7 +134,7 @@ export const FilterDrawer = ({
                         {/* Color swatch - positioned on the right */}
                         <span
                           className="w-[15px] h-[15px] rounded-full ml-auto flex-shrink-0"
-                          style={{ backgroundColor: swatchColor, border: '0.5px solid rgba(0, 0, 0, 0.08)' }}
+                          style={{ backgroundColor: swatchColor, border: "0.5px solid rgba(0, 0, 0, 0.08)" }}
                         />
                       </label>
                     )
@@ -156,7 +156,7 @@ export const FilterDrawer = ({
                 checked={localFilters.inStock}
                 onChange={toggleInStock}
                 className="appearance-none border border-neutral-400 bg-transparent checked:border-neutral-400 cursor-pointer relative checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:w-[7px] checked:after:h-[7px] checked:after:bg-black checked:after:content-[''] mr-3 flex-shrink-0"
-                style={{ borderRadius: 0, width: '15px', height: '15px', minWidth: '15px', minHeight: '15px' }}
+                style={{ borderRadius: 0, width: "15px", height: "15px", minWidth: "15px", minHeight: "15px" }}
               />
               <span
                 className="text-[16px] leading-[100%] text-black"

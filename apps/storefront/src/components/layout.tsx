@@ -32,7 +32,7 @@ const Layout = () => {
         </NavbarProvider>
       </CartProvider>
     </ToastProvider>
-  );
-};
+  )
+}
 
-export default Layout;
+export default Layout

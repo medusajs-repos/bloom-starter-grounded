@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button"
 import {
   Drawer,
   DrawerContent,
@@ -24,8 +23,8 @@ import { useRegion } from "@/lib/hooks/use-regions"
 import { sortCartItems } from "@/lib/utils/cart"
 import { getCountryCodeFromPath } from "@/lib/utils/region"
 import { getPricePercentageDiff } from "@/lib/utils/price"
-import { useCartDrawer } from "@/lib/context/cart"
-import { Minus, Plus, Trash, XMark } from "@medusajs/icons"
+import { useCartDrawer } from "@/lib/hooks/use-cart-drawer"
+import { Trash, XMark } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import { Link, useLocation } from "@tanstack/react-router"
 import { clsx } from "clsx"
@@ -103,7 +102,6 @@ type CartItemQuantitySelectorProps = {
 
 export const CartItemQuantitySelector = ({
   item,
-  type = "default",
   fields,
 }: CartItemQuantitySelectorProps) => {
   const updateLineItemMutation = useUpdateLineItem({ fields })
@@ -153,16 +151,17 @@ interface CartLineItemProps {
   fields?: string
   className?: string
   onClose?: () => void
+  countryCode?: string
 }
 
-const CompactCartLineItem = ({ item, cart, fields, onClose }: CartLineItemProps) => {
+const CompactCartLineItem = ({ item, cart, fields, onClose, countryCode = "us" }: CartLineItemProps) => {
   return (
     <div className="flex gap-4 p-4 border-b border-[var(--color-grounded-light-gray)] last:border-b-0" data-testid="cart-item">
-      <Link to={`/products/${item.product_handle}` as any} onClick={onClose} className="w-32 h-32 bg-gradient-to-br from-neutral-100 to-neutral-200 flex-shrink-0 overflow-hidden rounded-none relative block">
+      <Link to="/$countryCode/products/$handle" params={{ countryCode, handle: item.product_handle || "" }} onClick={onClose} className="w-32 h-32 bg-gradient-to-br from-neutral-100 to-neutral-200 flex-shrink-0 overflow-hidden rounded-none relative block">
         {item.thumbnail && (
           <img src={item.thumbnail} alt={item.product_title || item.title} className="w-full h-full object-cover" />
         )}
-        <div className="absolute inset-0 rounded-none pointer-events-none" style={{ border: '0.5px solid rgba(0,0,0,0.08)' }} />
+        <div className="absolute inset-0 rounded-none pointer-events-none" style={{ border: "0.5px solid rgba(0,0,0,0.08)" }} />
       </Link>
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
@@ -200,7 +199,7 @@ const DisplayCartLineItem = ({ item, cart, className }: CartLineItemProps) => {
         {item.thumbnail && (
           <img src={item.thumbnail} alt={item.product_title || item.title} className="w-full h-full object-cover" />
         )}
-        <div className="absolute inset-0 pointer-events-none" style={{ border: '0.5px solid rgba(0,0,0,0.1)' }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ border: "0.5px solid rgba(0,0,0,0.1)" }} />
       </div>
       <div className="flex-1 flex flex-col justify-between self-stretch">
         <div>
@@ -225,9 +224,10 @@ export const CartLineItem = ({
   fields,
   className,
   onClose,
+  countryCode = "us",
 }: CartLineItemProps) => {
   if (type === "compact") {
-    return <CompactCartLineItem item={item} cart={cart} fields={fields} className={className} onClose={onClose} />
+    return <CompactCartLineItem item={item} cart={cart} fields={fields} className={className} onClose={onClose} countryCode={countryCode} />
   }
 
   if (type === "display") {
@@ -340,25 +340,10 @@ type CartPromoProps = {
   cart: HttpTypes.StoreCart
 }
 
-export const CartPromo = ({ cart }: CartPromoProps) => {
+export const CartPromo = (_props: CartPromoProps) => {
   const [promoCode, setPromoCode] = useState("")
   const [error, setError] = useState<string | null>(null)
   const applyPromoCodeMutation = useApplyPromoCode()
-  const removePromoCodeMutation = useRemovePromoCode()
-
-  const handleRemove = (code: string) => {
-    removePromoCodeMutation.mutate(
-      { code },
-      {
-        onSuccess: () => {
-          console.log("Promo code removed successfully")
-        },
-        onError: (error) => {
-          console.error("Failed to remove promo code:", error)
-        },
-      }
-    )
-  }
 
   const handleApply = () => {
     setError(null)
@@ -390,7 +375,7 @@ export const CartPromo = ({ cart }: CartPromoProps) => {
               setError(null)
             }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === "Enter") {
                 handleApply()
               }
             }}
@@ -413,13 +398,13 @@ export const CartPromo = ({ cart }: CartPromoProps) => {
 
 export const CartEmpty = () => {
   const location = useLocation()
-  const countryCode = getCountryCodeFromPath(location.pathname)
+  const countryCode = getCountryCodeFromPath(location.pathname) || "us"
 
   return (
     <div className="text-center py-16 flex flex-col items-center justify-center gap-4">
       <h2 className="text-[16px] font-medium text-[var(--color-grounded-text)]">Your cart is empty.</h2>
       <p className="text-[var(--color-grounded-gray)] text-[13px]">Start by adding some products</p>
-      <Link to={`/${countryCode}/store` as any}>
+      <Link to="/$countryCode/store" params={{ countryCode }}>
         <button className="btn-grounded">
           Continue shopping
         </button>
@@ -464,14 +449,15 @@ interface RecommendedProductCardProps {
 }
 
 const RecommendedProductCard = ({ product, currencyCode, countryCode, onAddToCart, isAdding, onClose }: RecommendedProductCardProps) => {
-  const firstVariant = product.variants?.[0] as any
-  const price = firstVariant?.calculated_price?.calculated_amount || 0
-  const variantTitle = firstVariant?.title && firstVariant.title !== "Default Variant" 
-    ? firstVariant.title 
+  const firstVariant = product.variants?.[0]
+  const variantWithPrice = firstVariant as (typeof firstVariant & { calculated_price?: { calculated_amount?: number }, images?: { url: string }[] }) | undefined
+  const price = variantWithPrice?.calculated_price?.calculated_amount || 0
+  const variantTitle = firstVariant?.title && firstVariant.title !== "Default Variant"
+    ? firstVariant.title
     : null
-  
+
   // Get thumbnail from first variant's images
-  const variantImages = firstVariant?.images as { url: string }[] | undefined
+  const variantImages = variantWithPrice?.images
   const thumbnail = variantImages?.[0]?.url || product.thumbnail
 
   return (
@@ -489,7 +475,7 @@ const RecommendedProductCard = ({ product, currencyCode, countryCode, onAddToCar
             className="w-full h-full object-cover"
           />
         )}
-        <div className="absolute inset-0 pointer-events-none" style={{ border: '0.5px solid rgba(0, 0, 0, 0.08)' }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ border: "0.5px solid rgba(0, 0, 0, 0.08)" }} />
       </div>
       <div className="flex-1 p-2.5 flex flex-col justify-between min-w-0 relative">
         <div>
@@ -503,11 +489,13 @@ const RecommendedProductCard = ({ product, currencyCode, countryCode, onAddToCar
         {variantTitle && (
           <p className="text-[14px] text-neutral-600 truncate">{variantTitle}</p>
         )}
-        <button 
+        <button
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            firstVariant && onAddToCart(firstVariant.id)
+            if (firstVariant) {
+              onAddToCart(firstVariant.id)
+            }
           }}
           disabled={isAdding || !firstVariant}
           className="absolute top-2 right-2 px-3 py-1 text-[16px] font-medium bg-black/5 text-[var(--color-grounded-text)] hover:bg-black/10 transition-colors disabled:opacity-50 rounded-none cursor-pointer"
@@ -583,8 +571,7 @@ export const CartDropdown = ({ variant = "dark" }: CartDropdownProps) => {
     fields: DEFAULT_CART_DROPDOWN_FIELDS,
   })
   const location = useLocation()
-  const countryCode = getCountryCodeFromPath(location.pathname)
-  const baseHref = countryCode ? `/${countryCode}` : ""
+  const countryCode = getCountryCodeFromPath(location.pathname) || "us"
 
   // Get region for recommendations
   const { data: region } = useRegion({ country_code: countryCode || "us" })
@@ -593,13 +580,13 @@ export const CartDropdown = ({ variant = "dark" }: CartDropdownProps) => {
   const itemCount = sortedItems?.reduce((total, item) => total + item.quantity, 0) || 0
 
   // Format count with leading zero (01, 02, etc.)
-  const formattedCount = itemCount.toString().padStart(2, '0')
+  const formattedCount = itemCount.toString().padStart(2, "0")
 
   // Get estimated shipping date (tomorrow)
   const getEstimatedShippingDate = () => {
     const date = new Date()
     date.setDate(date.getDate() + 1)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
   }
 
   // Terms acceptance state
@@ -622,14 +609,14 @@ export const CartDropdown = ({ variant = "dark" }: CartDropdownProps) => {
 
       <DrawerContent className="flex flex-col bg-white" hideClose>
         {/* Header */}
-        <DrawerHeader className={`flex items-start justify-between !p-2 !h-auto !border-0 ${itemCount > 0 ? 'border-b !border-b border-[var(--color-grounded-light-gray)]' : ''}`}>
+        <DrawerHeader className={`flex items-start justify-between !p-2 !h-auto !border-0 ${itemCount > 0 ? "border-b !border-b border-[var(--color-grounded-light-gray)]" : ""}`}>
           <div className="text-left p-2">
             <DrawerTitle className="text-[20px] font-medium leading-none text-[var(--color-grounded-text)]">
               Your cart
             </DrawerTitle>
 {itemCount > 0 && (
               <p className="text-[20px] font-medium leading-none text-[var(--color-grounded-gray)]">
-                {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                {itemCount} {itemCount === 1 ? "item" : "items"}
               </p>
             )}
           </div>
@@ -667,6 +654,7 @@ export const CartDropdown = ({ variant = "dark" }: CartDropdownProps) => {
                   type="compact"
                   fields={DEFAULT_CART_DROPDOWN_FIELDS}
                   onClose={closeCart}
+                  countryCode={countryCode}
                 />
               ))}
             </div>
@@ -710,20 +698,20 @@ export const CartDropdown = ({ variant = "dark" }: CartDropdownProps) => {
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
                 className="mt-0.5 appearance-none border border-neutral-400 bg-transparent checked:border-neutral-400 cursor-pointer relative checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:w-[7px] checked:after:h-[7px] checked:after:bg-black checked:after:content-['']"
-                style={{ borderRadius: 0, width: '15px', height: '15px', minWidth: '15px', minHeight: '15px' }}
+                style={{ borderRadius: 0, width: "15px", height: "15px", minWidth: "15px", minHeight: "15px" }}
               />
               <span className="text-sm text-black">
                 I accept the{" "}
-                <Link to={`${baseHref}/terms` as any} className="underline hover:text-[var(--color-grounded-text)]">
+                <a href="#" className="underline hover:text-[var(--color-grounded-text)]">
                   terms and conditions
-                </Link>
+                </a>
               </span>
             </label>
 
             {/* Action buttons */}
             <div className="flex items-center gap-3">
               {termsAccepted ? (
-                <Link to={`${baseHref}/checkout` as any} onClick={closeCart} className="flex-1">
+                <Link to="/$countryCode/checkout" params={{ countryCode }} search={{ step: "addresses" }} onClick={closeCart} className="flex-1">
                   <button className="w-full h-[48px] px-6 bg-black hover:bg-gray-800 text-white text-[20px] font-medium rounded-none transition-colors flex items-center justify-center gap-2">
                     <span>Go to checkout</span>
                     <span>

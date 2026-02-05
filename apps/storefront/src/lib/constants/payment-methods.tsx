@@ -1,5 +1,4 @@
 import React from "react"
-import { Cash, CreditCard } from "@medusajs/icons"
 
 // Payment icon URLs
 const paymentIcons = {

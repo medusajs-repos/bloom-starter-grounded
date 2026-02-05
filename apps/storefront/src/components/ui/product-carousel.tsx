@@ -43,23 +43,23 @@ const ProductCarousel = memo(function ProductCarousel({ images }: ProductCarouse
     if (hasDragged.current) return // Don't open if user was dragging
     setLightboxStartIndex(index)
     setLightboxOpen(true)
-    document.body.style.overflow = 'hidden'
+    document.body.style.overflow = "hidden"
   }
 
   const closeLightbox = () => {
     setLightboxOpen(false)
-    document.body.style.overflow = ''
+    document.body.style.overflow = ""
   }
 
   // Close lightbox on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && lightboxOpen) {
+      if (e.key === "Escape" && lightboxOpen) {
         closeLightbox()
       }
     }
-    window.addEventListener('keydown', handleEscape)
-    return () => window.removeEventListener('keydown', handleEscape)
+    window.addEventListener("keydown", handleEscape)
+    return () => window.removeEventListener("keydown", handleEscape)
   }, [lightboxOpen])
 
   // Lightbox drag handlers
@@ -218,8 +218,8 @@ const ProductCarousel = memo(function ProductCarousel({ images }: ProductCarouse
         handleLightboxMouseUp()
       }
     }
-    window.addEventListener('mouseup', handleGlobalLightboxMouseUp)
-    return () => window.removeEventListener('mouseup', handleGlobalLightboxMouseUp)
+    window.addEventListener("mouseup", handleGlobalLightboxMouseUp)
+    return () => window.removeEventListener("mouseup", handleGlobalLightboxMouseUp)
   }, [isLightboxDragging, handleLightboxMouseUp])
 
   // Track lightbox image widths for infinite scroll
@@ -251,7 +251,7 @@ const ProductCarousel = memo(function ProductCarousel({ images }: ProductCarouse
       
       // Wait for images to render, then calculate widths
       requestAnimationFrame(() => {
-        const imageElements = container.querySelectorAll('img')
+        const imageElements = container.querySelectorAll("img")
         const gap = 8
         let totalWidth = 0
         
@@ -431,8 +431,8 @@ const ProductCarousel = memo(function ProductCarousel({ images }: ProductCarouse
         handleMouseUp()
       }
     }
-    window.addEventListener('mouseup', handleGlobalMouseUp)
-    return () => window.removeEventListener('mouseup', handleGlobalMouseUp)
+    window.addEventListener("mouseup", handleGlobalMouseUp)
+    return () => window.removeEventListener("mouseup", handleGlobalMouseUp)
   }, [isDragging, handleMouseUp])
 
   // Touch event handlers for mobile (with momentum)
@@ -545,7 +545,7 @@ const ProductCarousel = memo(function ProductCarousel({ images }: ProductCarouse
             <div
               key={`${image.id}-${index}`}
               className="flex-shrink-0 w-[384px] h-[480px] md:w-[576px] md:h-[720px] bg-neutral-100 overflow-hidden border border-black/[0.08] cursor-pointer"
-              style={{ borderWidth: '0.5px' }}
+              style={{ borderWidth: "0.5px" }}
               onClick={() => openLightbox(originalIndex)}
             >
               {!!image.url && (
@@ -609,9 +609,9 @@ const ProductCarousel = memo(function ProductCarousel({ images }: ProductCarouse
                 key={`lightbox-${image.id}-${index}`}
                 className="flex-shrink-0 overflow-hidden"
                 style={{ 
-                  height: 'calc(100vh - 16px)',
-                  width: 'calc((100vh - 16px) * 0.8)',
-                  border: '0.5px solid rgba(0, 0, 0, 0.08)'
+                  height: "calc(100vh - 16px)",
+                  width: "calc((100vh - 16px) * 0.8)",
+                  border: "0.5px solid rgba(0, 0, 0, 0.08)"
                 }}
               >
                 {!!image.url && (
