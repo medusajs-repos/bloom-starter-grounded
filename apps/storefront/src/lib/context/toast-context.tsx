@@ -1,35 +1,20 @@
-import { createContext, ReactNode, useContext, useState } from "react";
-
-type ToastContextType = {
-  message: string | null;
-  showToast: (message: string) => void;
-  hideToast: () => void;
-};
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
-
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error("useToast must be used within ToastProvider");
-  }
-  return context;
-};
+import { ReactNode, useState } from "react"
+import { ToastContext } from "@/lib/hooks/use-toast"
 
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null)
 
   const showToast = (msg: string) => {
-    setMessage(msg);
+    setMessage(msg)
     // Auto-dismiss after 3 seconds
     setTimeout(() => {
-      setMessage(null);
-    }, 3000);
-  };
+      setMessage(null)
+    }, 3000)
+  }
 
   const hideToast = () => {
-    setMessage(null);
-  };
+    setMessage(null)
+  }
 
   return (
     <ToastContext.Provider value={{ message, showToast, hideToast }}>
@@ -59,5 +44,5 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         }
       `}</style>
     </ToastContext.Provider>
-  );
-};
+  )
+}

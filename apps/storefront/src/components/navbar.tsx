@@ -9,7 +9,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
-import { useNavbar } from "@/lib/context/navbar-context"
+import { useNavbar } from "@/lib/hooks/use-navbar"
 import { useCategories } from "@/lib/hooks/use-categories"
 import { useProductCount } from "@/lib/hooks/use-products"
 import { useRegion } from "@/lib/hooks/use-regions"
@@ -54,14 +54,6 @@ const UserIcon = () => (
       <path d="M2 14C2 11 4.5 9 7.5 9C10.5 9 13 11 13 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   </div>
-)
-
-const MenuIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 6H21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M3 12H21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M3 18H21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-  </svg>
 )
 
 export const Navbar = () => {
@@ -154,7 +146,7 @@ export const Navbar = () => {
                   </DrawerClose>
                 </DrawerHeader>
                 
-                <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                   {/* Shop Section */}
                   <div className="py-4">
                     <div className="px-6 py-3 text-black text-[11px] uppercase tracking-widest font-medium">

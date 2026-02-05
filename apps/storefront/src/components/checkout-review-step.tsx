@@ -12,8 +12,8 @@ interface ReviewStepProps {
 }
 
 const ReviewStep = ({ cart, onBack }: ReviewStepProps) => {
-  const paidByGiftcard = isPaidWithGiftCard(cart);
-  const activeSession = getActivePaymentSession(cart);
+  const paidByGiftcard = isPaidWithGiftCard(cart)
+  const activeSession = getActivePaymentSession(cart)
 
   return (
     <div className="space-y-6">
@@ -95,7 +95,7 @@ const ReviewStep = ({ cart, onBack }: ReviewStepProps) => {
         <PaymentButton cart={cart} />
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ReviewStep;
+export default ReviewStep

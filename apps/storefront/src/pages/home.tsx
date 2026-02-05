@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router"
 import { getCountryCodeFromPath } from "@/lib/utils/region"
 import { HeroSlider } from "@/components/hero-slider"
-import { useNavbarVariant } from "@/lib/context/navbar-context"
+import { useNavbarVariant } from "@/lib/hooks/use-navbar"
 import { ArrowRight } from "@medusajs/icons"
 import { useRef, useEffect, useState } from "react"
 
@@ -77,7 +77,7 @@ const Home = () => {
                 className="absolute inset-0 opacity-10 pointer-events-none"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'repeat',
+                  backgroundRepeat: "repeat",
                 }}
               />
               <div className="flex items-start justify-between w-full relative z-10">
@@ -190,7 +190,7 @@ const FitTextSection = ({ storeHref }: { storeHref: string }) => {
       
       const containerWidth = containerRef.current.offsetWidth
       // Start with a base size and adjust
-      let testSize = 200
+      const testSize = 200
       textRef.current.style.fontSize = `${testSize}px`
       
       // Binary search for the right font size
@@ -404,8 +404,8 @@ const ArtistCarousel = ({ countryCode }: { countryCode: string }) => {
         handleMouseUp()
       }
     }
-    window.addEventListener('mouseup', handleGlobalMouseUp)
-    return () => window.removeEventListener('mouseup', handleGlobalMouseUp)
+    window.addEventListener("mouseup", handleGlobalMouseUp)
+    return () => window.removeEventListener("mouseup", handleGlobalMouseUp)
   }, [isDragging])
 
   // Touch event handlers for mobile (with momentum)

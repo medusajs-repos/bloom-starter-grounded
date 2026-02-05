@@ -38,15 +38,6 @@ const UserIcon = () => (
   </div>
 )
 
-// Close Icon
-const CloseIcon = () => (
-  <div className="w-7 h-7 flex items-center justify-center">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  </div>
-)
-
 // Menu data structure
 const menuData = {
   sofas: {
@@ -253,12 +244,12 @@ export const MegaMenu = ({ baseHref, variant = "transparent", productCount = 0 }
   // Disable body scroll when menu is open
   useEffect(() => {
     if (activeMenu) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = "hidden"
     } else {
-      document.body.style.overflow = ''
+      document.body.style.overflow = ""
     }
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.overflow = ""
     }
   }, [activeMenu])
 
@@ -312,12 +303,12 @@ export const MegaMenu = ({ baseHref, variant = "transparent", productCount = 0 }
       </div>
 
       {/* Full-screen overlay container - rendered via portal to escape navbar z-index */}
-      {shouldRender && activeMenu && typeof document !== 'undefined' && createPortal(
+      {shouldRender && activeMenu && typeof document !== "undefined" && createPortal(
         <>
           {/* Backdrop overlay with blur - covers entire screen */}
           <div
             className={`fixed inset-0 z-[100] bg-black/40 backdrop-blur-lg transition-opacity duration-150 ${
-              (isClosing || isAnimatingIn) ? 'opacity-0' : 'opacity-100'
+              (isClosing || isAnimatingIn) ? "opacity-0" : "opacity-100"
             }`}
             onClick={closeMenu}
           >
@@ -326,8 +317,8 @@ export const MegaMenu = ({ baseHref, variant = "transparent", productCount = 0 }
               className="absolute inset-0 opacity-10 pointer-events-none"
               style={{ 
                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'repeat',
-                backgroundSize: '200px 200px'
+                backgroundRepeat: "repeat",
+                backgroundSize: "200px 200px"
               }}
             />
           </div>
@@ -336,15 +327,15 @@ export const MegaMenu = ({ baseHref, variant = "transparent", productCount = 0 }
           <div
             className={`fixed left-1/2 -translate-x-1/2 z-[101] bg-white shadow-2xl overflow-hidden rounded-none ${
               isClosing 
-                ? 'opacity-0' 
-                : 'opacity-100'
+                ? "opacity-0" 
+                : "opacity-100"
             }`}
             style={{ 
-              width: (isClosing || isAnimatingIn) ? '100vw' : 'calc(100vw - 16px)',
-              top: (isClosing || isAnimatingIn) ? '0px' : '8px',
+              width: (isClosing || isAnimatingIn) ? "100vw" : "calc(100vw - 16px)",
+              top: (isClosing || isAnimatingIn) ? "0px" : "8px",
               transition: isClosing 
-                ? 'width 280ms ease-out, top 280ms ease-out, opacity 280ms ease-out'
-                : 'width 250ms ease-out, top 250ms ease-out, opacity 250ms ease-out'
+                ? "width 280ms ease-out, top 280ms ease-out, opacity 280ms ease-out"
+                : "width 250ms ease-out, top 250ms ease-out, opacity 250ms ease-out"
             }}
           >
           {/* Mirrored Navbar Header */}
@@ -445,7 +436,7 @@ export const MegaMenu = ({ baseHref, variant = "transparent", productCount = 0 }
                         alt=""
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 rounded-none pointer-events-none" style={{ border: '0.5px solid rgba(0, 0, 0, 0.08)' }} />
+                      <div className="absolute inset-0 rounded-none pointer-events-none" style={{ border: "0.5px solid rgba(0, 0, 0, 0.08)" }} />
                     </Link>
                   ))}
                 </div>
@@ -470,10 +461,10 @@ export const MegaMenu = ({ baseHref, variant = "transparent", productCount = 0 }
                   className="absolute inset-0 pointer-events-none opacity-30 mix-blend-overlay"
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'repeat',
+                    backgroundRepeat: "repeat",
                   }}
                 />
-                <div className="absolute inset-0 rounded-none pointer-events-none" style={{ border: '0.5px solid rgba(0, 0, 0, 0.08)' }} />
+                <div className="absolute inset-0 rounded-none pointer-events-none" style={{ border: "0.5px solid rgba(0, 0, 0, 0.08)" }} />
                 <div className="absolute bottom-6 left-6 z-10">
                   <p className="text-white text-xl font-light drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
                     {menuData[activeMenu].featuredTitle}

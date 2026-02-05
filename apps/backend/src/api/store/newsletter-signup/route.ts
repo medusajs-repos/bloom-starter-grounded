@@ -39,7 +39,7 @@ export async function POST(
   })
 
   let customerId = customers[0]?.id
-  const existingGroups = (customers[0] as any)?.groups || []
+  const existingGroups = (customers[0])?.groups || []
 
   // Check if customer is already subscribed to the newsletter
   const alreadySubscribed = existingGroups.some(

@@ -2,7 +2,7 @@ import { getCountryCodeFromPath } from "@/lib/utils/region"
 import { HttpTypes } from "@medusajs/types"
 import { Link, useLocation, useNavigate } from "@tanstack/react-router"
 import { formatPrice } from "@/lib/utils/price"
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 
 interface ProductRowCardProps {
   product: HttpTypes.StoreProduct
@@ -19,8 +19,7 @@ interface ColorVariantImage {
 
 const ProductRowCard = ({ product, isLast = false }: ProductRowCardProps) => {
   const location = useLocation()
-  const countryCode = getCountryCodeFromPath(location.pathname)
-  const baseHref = countryCode ? `/${countryCode}` : ""
+  const countryCode = getCountryCodeFromPath(location.pathname) || "us"
 
   // Get color variant thumbnails with hover images - one per unique color
   const colorVariantImages = useMemo(() => {
@@ -29,7 +28,7 @@ const ProductRowCard = ({ product, isLast = false }: ProductRowCardProps) => {
     
     // Find the Color option
     const colorOption = product.options?.find(opt => 
-      opt.title?.toLowerCase() === 'color' || opt.title?.toLowerCase() === 'colour'
+      opt.title?.toLowerCase() === "color" || opt.title?.toLowerCase() === "colour"
     )
     
     if (!colorOption || !product.variants) {
@@ -43,7 +42,7 @@ const ProductRowCard = ({ product, isLast = false }: ProductRowCardProps) => {
         seenColors.add(colorOptionValue.value)
         
         // Get images from variant.images array
-        const variantImages = (variant as any).images as { url: string }[] | undefined
+        const variantImages = (variant as { images?: { url: string }[] })?.images
         const thumbnail = variantImages?.[0]?.url || variant.thumbnail || product.thumbnail
         const hoverUrl = variantImages?.[1]?.url || null
         
@@ -70,7 +69,7 @@ const ProductRowCard = ({ product, isLast = false }: ProductRowCardProps) => {
     const seenUrls = new Set<string>()
     
     // Get images from first variant
-    const firstVariant = product.variants?.[0] as any
+    const firstVariant = product.variants?.[0] as (ProductRowCardProps & { images?: { url: string }[] }) | undefined
     const variantImages = firstVariant?.images as { url: string }[] | undefined
     
     if (variantImages && variantImages.length > 0) {
@@ -116,7 +115,8 @@ const ProductRowCard = ({ product, isLast = false }: ProductRowCardProps) => {
     return null
   }, [product])
 
-  const productHref = `${baseHref}/products/${product.handle}`
+  const productHref = `/${countryCode}/products/${product.handle}`
+  const toProductHref = "/$countryCode/products/$handle"
   
   // Get first color for default link
   const firstColor = colorVariantImages[0]?.colorValue
@@ -126,10 +126,10 @@ const ProductRowCard = ({ product, isLast = false }: ProductRowCardProps) => {
   const handleCardClick = (e: React.MouseEvent) => {
     // Only navigate if clicking the card itself, not a thumbnail
     const target = e.target as HTMLElement
-    if (!target.closest('[data-thumbnail-link]')) {
+    if (!target.closest("[data-thumbnail-link]")) {
       navigate({ 
-        to: productHref as any, 
-        search: firstColor ? { color: firstColor } as any : undefined 
+        to: productHref, 
+        search: firstColor ? { color: firstColor }  : undefined 
       })
     }
   }
@@ -137,7 +137,7 @@ const ProductRowCard = ({ product, isLast = false }: ProductRowCardProps) => {
   return (
     <div 
       onClick={handleCardClick}
-      className={`group flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-2 pt-4 pb-8 md:py-2 border-b border-[#ebebeb] hover:bg-[#fafafa] transition-colors px-4 md:px-8 md:items-center cursor-pointer ${isLast ? 'border-b-0' : ''}`}
+      className={`group flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-2 pt-4 pb-8 md:py-2 border-b border-[#ebebeb] hover:bg-[#fafafa] transition-colors px-4 md:px-8 md:items-center cursor-pointer ${isLast ? "border-b-0" : ""}`}
     >
       {/* Color variant thumbnails - shown first on mobile, last on desktop */}
       <div className="order-1 md:order-3 md:col-start-5 md:col-span-8 flex gap-2 overflow-x-auto no-scrollbar md:grid md:grid-cols-8">
@@ -145,8 +145,9 @@ const ProductRowCard = ({ product, isLast = false }: ProductRowCardProps) => {
           colorVariantImages.map((img) => (
             <Link
               key={`${product.id}-color-${img.colorValue}`}
-              to={productHref as any}
-              search={{ variant: img.variantId } as any}
+              to={toProductHref}
+              params={{ countryCode, handle: product.handle || "" as string }}
+              search={{ variant: img.variantId }}
               data-thumbnail-link
               className="h-32 w-auto md:h-auto md:w-full bg-[#f7f7f7] overflow-hidden relative aspect-[4/5] group/thumb flex-shrink-0"
             >
@@ -154,7 +155,7 @@ const ProductRowCard = ({ product, isLast = false }: ProductRowCardProps) => {
               <img
                 src={img.url}
                 alt={img.alt}
-                className={`w-full h-full object-cover object-center transition-opacity duration-300 ${img.hoverUrl ? 'group-hover/thumb:opacity-0' : 'group-hover/thumb:scale-105 transition-transform'}`}
+                className={`w-full h-full object-cover object-center transition-opacity duration-300 ${img.hoverUrl ? "group-hover/thumb:opacity-0" : "group-hover/thumb:scale-105 transition-transform"}`}
                 loading="lazy"
               />
               {/* Hover image */}

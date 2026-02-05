@@ -11,8 +11,7 @@ import { Price } from "@/components/ui/price"
 import type { HttpTypes } from "@medusajs/types"
 import { ProductInfoDrawer } from "@/components/product-info-drawer"
 import { ShoppingCart } from "@medusajs/icons"
-import { useAddToCart as useProductAddToCart } from "@/lib/hooks/use-cart"
-import { useCartDrawer } from "@/lib/context/cart"
+import { useCartDrawer } from "@/lib/hooks/use-cart-drawer"
 import { isVariantInStock } from "@/lib/utils/product"
 
 
@@ -22,8 +21,7 @@ const ProductDetails = () => {
   })
   const location = useLocation()
   const countryCode = getCountryCodeFromPath(location.pathname)
-  const storeHref = countryCode ? `/${countryCode}/store` : "/store"
-  
+
   // Local state for selected variant ID
   const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(
     product.variants?.[0]?.id
@@ -36,7 +34,7 @@ const ProductDetails = () => {
   const [hasScrolled, setHasScrolled] = useState(false)
   const [hasMounted, setHasMounted] = useState(false)
   const lastScrollY = useRef(0)
-  const addToCartMutation = useProductAddToCart()
+  const addToCartMutation = useAddToCart()
   const { openCart } = useCartDrawer()
   
   // Show floating button when past main button AND scrolling up AND user has started scrolling
@@ -143,7 +141,7 @@ const ProductDetails = () => {
 
   // Use variant images if available, otherwise fall back to product images
   const displayImages = useMemo(() => {
-    const variantImages = (selectedVariant as any)?.images
+    const variantImages = (selectedVariant as HttpTypes.StoreProductVariant & { images?: HttpTypes.StoreProductImage[] })?.images
     if (variantImages?.length) {
       return variantImages
     }
@@ -155,7 +153,7 @@ const ProductDetails = () => {
       {/* Full-width image carousel at top */}
       {displayImages.length > 0 && (
         <div className="w-full">
-          <ProductCarousel key={selectedVariant?.id || 'default'} images={displayImages} />
+          <ProductCarousel key={selectedVariant?.id || "default"} images={displayImages} />
         </div>
       )}
 
@@ -307,18 +305,6 @@ interface YouMayAlsoLikeProps {
 
 const YouMayAlsoLike = ({ currentProductId, regionId, currencyCode, countryCode }: YouMayAlsoLikeProps) => {
   const { data: productsData, isLoading } = useLatestProducts({ limit: 8, region_id: regionId })
-  const addToCartMutation = useAddToCart()
-  const [addingProductId, setAddingProductId] = useState<string | null>(null)
-
-  const handleAddToCart = (variantId: string, productId: string) => {
-    setAddingProductId(productId)
-    addToCartMutation.mutate(
-      { variant_id: variantId, quantity: 1, country_code: countryCode },
-      {
-        onSettled: () => setAddingProductId(null),
-      }
-    )
-  }
 
   // Filter out the current product and flatten to variants
   const filteredProducts = productsData?.products?.filter(p => p.id !== currentProductId) || []
@@ -327,29 +313,30 @@ const YouMayAlsoLike = ({ currentProductId, regionId, currencyCode, countryCode 
   const targetCount = 4
   const variantItems: Array<{
     product: HttpTypes.StoreProduct
-    variant: any
+    variant: HttpTypes.StoreProductVariant
     colorValue: string
-    colorOption: any
+    colorOption: HttpTypes.StoreProductOption
   }> = []
   
   // First pass: add one variant per product (prioritize unique products)
   for (const product of filteredProducts) {
     if (variantItems.length >= targetCount) break
     
-    const colorOption = product.options?.find(opt => opt.title?.toLowerCase() === 'color')
+    const colorOption = product.options?.find(opt => opt.title?.toLowerCase() === "color")
     const firstVariant = product.variants?.[0]
     
     if (firstVariant) {
-      const colorOptionValue = (firstVariant as any).options?.find((opt: any) => 
-        opt.option?.title?.toLowerCase() === 'color'
-      )
-      const colorValue = colorOptionValue?.value || ''
-      
+      const colorOptionValue = firstVariant.options?.find((opt) => {
+        const optWithOption = opt as typeof opt & { option?: { title?: string } }
+        return optWithOption.option?.title?.toLowerCase() === "color"
+      })
+      const colorValue = colorOptionValue?.value || ""
+
       variantItems.push({
         product,
-        variant: firstVariant as any,
+        variant: firstVariant as HttpTypes.StoreProductVariant,
         colorValue,
-        colorOption
+        colorOption: colorOption as HttpTypes.StoreProductOption,
       })
     }
   }
@@ -359,24 +346,25 @@ const YouMayAlsoLike = ({ currentProductId, regionId, currencyCode, countryCode 
     for (const product of filteredProducts) {
       if (variantItems.length >= targetCount) break
       
-      const colorOption = product.options?.find(opt => opt.title?.toLowerCase() === 'color')
+      const colorOption = product.options?.find(opt => opt.title?.toLowerCase() === "color")
       const variants = product.variants || []
       
       // Skip the first variant (already added), add remaining variants
       for (let i = 1; i < variants.length; i++) {
         if (variantItems.length >= targetCount) break
-        
+
         const variant = variants[i]
-        const colorOptionValue = (variant as any).options?.find((opt: any) => 
-          opt.option?.title?.toLowerCase() === 'color'
-        )
-        const colorValue = colorOptionValue?.value || ''
-        
+        const colorOptionValue = variant.options?.find((opt) => {
+          const optWithOption = opt as typeof opt & { option?: { title?: string } }
+          return optWithOption.option?.title?.toLowerCase() === "color"
+        })
+        const colorValue = colorOptionValue?.value || ""
+
         variantItems.push({
           product,
-          variant: variant as any,
+          variant: variant as HttpTypes.StoreProductVariant,
           colorValue,
-          colorOption
+          colorOption: colorOption as HttpTypes.StoreProductOption,
         })
       }
     }
@@ -410,7 +398,7 @@ const YouMayAlsoLike = ({ currentProductId, regionId, currencyCode, countryCode 
 // Recommended Variant Card for the product page - shows individual variants
 interface RecommendedVariantCardProps {
   product: HttpTypes.StoreProduct
-  variant: any
+  variant: HttpTypes.StoreProductVariant
   colorValue: string
   currencyCode: string
   countryCode: string
@@ -419,24 +407,24 @@ interface RecommendedVariantCardProps {
 const RecommendedVariantCard = ({ product, variant, colorValue, currencyCode, countryCode }: RecommendedVariantCardProps) => {
   // Get all color variants for this product
   const colorOption = product.options?.find(
-    opt => opt.title?.toLowerCase() === 'color' || opt.title?.toLowerCase() === 'colour'
+    opt => opt.title?.toLowerCase() === "color" || opt.title?.toLowerCase() === "colour"
   )
   
   // Build a map of color -> variant data
   const colorVariants = React.useMemo(() => {
     if (!colorOption || !product.variants) return []
-    
-    const variants: { color: string; variant: any; thumbnail: string | null }[] = []
+
+    const variants: { color: string; variant: HttpTypes.StoreProductVariant; thumbnail: string | null }[] = []
     const seenColors = new Set<string>()
-    
+
     for (const v of product.variants) {
       const colorOptValue = v.options?.find(
         opt => opt.option_id === colorOption.id
       )?.value
-      
+
       if (colorOptValue && !seenColors.has(colorOptValue)) {
         seenColors.add(colorOptValue)
-        const variantImages = (v as any)?.images as { url: string }[] | undefined
+        const variantImages = (v as HttpTypes.StoreProductVariant & { images?: { url: string }[] })?.images
         variants.push({
           color: colorOptValue,
           variant: v,
@@ -454,7 +442,7 @@ const RecommendedVariantCard = ({ product, variant, colorValue, currencyCode, co
   const currentVariantData = colorVariants.find(cv => cv.color === selectedColor) || {
     color: colorValue,
     variant: variant,
-    thumbnail: (variant?.images as { url: string }[] | undefined)?.[0]?.url || product.thumbnail
+    thumbnail: (variant as HttpTypes.StoreProductVariant & { images?: { url: string }[] })?.images?.[0]?.url || product.thumbnail
   }
   
   const price = currentVariantData.variant?.calculated_price?.calculated_amount || 0
@@ -463,53 +451,53 @@ const RecommendedVariantCard = ({ product, variant, colorValue, currencyCode, co
   // Map color names to actual colors
   const getColorHex = (colorName: string): string => {
     const colorMap: Record<string, string> = {
-      'black': '#1a1a1a',
-      'white': '#f5f5f5',
-      'cream': '#f5f5dc',
-      'beige': '#d4c5b5',
-      'sage': '#9dc183',
-      'green': '#4a7c59',
-      'blue': '#5b7fa3',
-      'navy': '#1e3a5f',
-      'gray': '#808080',
-      'grey': '#808080',
-      'brown': '#8b6f47',
-      'tan': '#d2b48c',
-      'pink': '#e8b4b8',
-      'rose': '#c08081',
-      'coral': '#ff7f50',
-      'orange': '#e57c3a',
-      'yellow': '#e5c03a',
-      'red': '#c44536',
-      'charcoal': '#36454f',
-      'camel': '#c19a6b',
-      'slate': '#708090',
-      'ivory': '#fffff0',
-      'blush': '#de98ab',
-      'terracotta': '#c75b3a',
-      'walnut': '#5d432c',
-      'oak': '#c4a35a',
-      'natural': '#e8dcc8',
-      'espresso': '#3c2415',
-      'mahogany': '#c04000',
-      'teak': '#b08451',
-      'ash': '#b2beb5',
-      'ebony': '#282828',
-      'sand': '#c2b280',
-      'olive': '#6b7d46',
-      'mustard': '#d4a934',
-      'burgundy': '#722f37',
-      'plum': '#6b4a5c',
-      'teal': '#3c7a7a',
-      'rust': '#b7410e',
-      'pewter': '#8b8d8e',
-      'silver': '#c0c0c0',
-      'gold': '#c5a44a',
-      'bronze': '#a87e4f',
-      'copper': '#b87333',
+      "black": "#1a1a1a",
+      "white": "#f5f5f5",
+      "cream": "#f5f5dc",
+      "beige": "#d4c5b5",
+      "sage": "#9dc183",
+      "green": "#4a7c59",
+      "blue": "#5b7fa3",
+      "navy": "#1e3a5f",
+      "gray": "#808080",
+      "grey": "#808080",
+      "brown": "#8b6f47",
+      "tan": "#d2b48c",
+      "pink": "#e8b4b8",
+      "rose": "#c08081",
+      "coral": "#ff7f50",
+      "orange": "#e57c3a",
+      "yellow": "#e5c03a",
+      "red": "#c44536",
+      "charcoal": "#36454f",
+      "camel": "#c19a6b",
+      "slate": "#708090",
+      "ivory": "#fffff0",
+      "blush": "#de98ab",
+      "terracotta": "#c75b3a",
+      "walnut": "#5d432c",
+      "oak": "#c4a35a",
+      "natural": "#e8dcc8",
+      "espresso": "#3c2415",
+      "mahogany": "#c04000",
+      "teak": "#b08451",
+      "ash": "#b2beb5",
+      "ebony": "#282828",
+      "sand": "#c2b280",
+      "olive": "#6b7d46",
+      "mustard": "#d4a934",
+      "burgundy": "#722f37",
+      "plum": "#6b4a5c",
+      "teal": "#3c7a7a",
+      "rust": "#b7410e",
+      "pewter": "#8b8d8e",
+      "silver": "#c0c0c0",
+      "gold": "#c5a44a",
+      "bronze": "#a87e4f",
+      "copper": "#b87333",
     }
     const lower = colorName.toLowerCase()
-    return colorMap[lower] || '#cccccc'
+    return colorMap[lower] || "#cccccc"
   }
 
   return (
@@ -552,12 +540,12 @@ const RecommendedVariantCard = ({ product, variant, colorValue, currencyCode, co
                 }}
                 className={`h-3 rounded-full transition-all duration-200 ${
                   selectedColor === cv.color 
-                    ? 'w-6' 
-                    : 'w-3'
+                    ? "w-6" 
+                    : "w-3"
                 }`}
                 style={{ 
                   backgroundColor: getColorHex(cv.color),
-                  boxShadow: 'inset 0 0 0 0.5px rgba(0, 0, 0, 0.1)'
+                  boxShadow: "inset 0 0 0 0.5px rgba(0, 0, 0, 0.1)"
                 }}
                 title={cv.color}
               />

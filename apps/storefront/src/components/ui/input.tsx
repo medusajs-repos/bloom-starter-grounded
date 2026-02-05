@@ -1,4 +1,4 @@
-import { clsx } from "clsx";
+import { clsx } from "clsx"
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
@@ -17,5 +17,5 @@ export const Input = ({ className, ...props }: InputProps) => {
       )}
       {...props}
     />
-  );
-};
+  )
+}

@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { HttpTypes } from "@medusajs/types"
 import { queryKeys } from "@/lib/utils/query-keys"
 import { sdk } from "@/lib/utils/sdk"
 import { getStoredCart, removeStoredCart } from "@/lib/utils/cart"
@@ -63,7 +62,7 @@ export const useSetCartAddresses = () => {
 // ============ SHIPPING ============
 
 export const useShippingOptions = ({ cart_id }: { cart_id?: string } = {}) => {
-  const storedCartId = typeof window !== 'undefined' ? getStoredCart() : null
+  const storedCartId = typeof window !== "undefined" ? getStoredCart() : null
   return useQuery({
     queryKey: queryKeys.shipping.options(cart_id || ""),
     queryFn: async () => {
@@ -137,7 +136,7 @@ export const useInitiateCartPaymentSession = () => {
       data,
     }: {
       provider_id: string;
-      data?: Record<string, any>;
+      data?: Record<string, unknown>;
     }) => {
       const cartId = getStoredCart()
       if (!cartId) throw new Error("No cart found")

@@ -1,9 +1,8 @@
 import CountrySelect from "@/components/country-select"
 import { useRegions } from "@/lib/hooks/use-regions"
-import { getCountryCodeFromPath } from "@/lib/utils/region"
 import { sdk } from "@/lib/utils/sdk"
 import { useMutation } from "@tanstack/react-query"
-import { Link, useLocation } from "@tanstack/react-router"
+import { Link } from "@tanstack/react-router"
 import { useState } from "react"
 
 // Social Icons
@@ -53,10 +52,6 @@ const paymentIcons = {
 }
 
 const Footer = () => {
-  const location = useLocation()
-  const countryCode = getCountryCodeFromPath(location.pathname)
-  const baseHref = countryCode ? `/${countryCode}` : ""
-
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
   const [subscribed, setSubscribed] = useState(false)
@@ -138,10 +133,10 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mt-0 md:mt-12 lg:mt-0 overflow-visible md:h-[1.25rem]">
             <span className="text-white/40 text-sm leading-none shrink-0">Payment methods</span>
             <div className="flex justify-between md:justify-start w-full md:w-auto gap-3 items-center">
-              <img src={paymentIcons.applepay} alt="Apple Pay" className="brightness-0 invert" style={{ height: '3.3em' }} />
-              <img src={paymentIcons.mastercard} alt="Mastercard" className="brightness-0 invert" style={{ height: '3.3em' }} />
-              <img src={paymentIcons.paypal} alt="PayPal" className="brightness-0 invert" style={{ height: '3.3em' }} />
-              <img src={paymentIcons.visa} alt="Visa" className="brightness-0 invert" style={{ height: '3.3em' }} />
+              <img src={paymentIcons.applepay} alt="Apple Pay" className="brightness-0 invert" style={{ height: "3.3em" }} />
+              <img src={paymentIcons.mastercard} alt="Mastercard" className="brightness-0 invert" style={{ height: "3.3em" }} />
+              <img src={paymentIcons.paypal} alt="PayPal" className="brightness-0 invert" style={{ height: "3.3em" }} />
+              <img src={paymentIcons.visa} alt="Visa" className="brightness-0 invert" style={{ height: "3.3em" }} />
             </div>
           </div>
         </div>
@@ -214,7 +209,7 @@ const Footer = () => {
                   className="absolute inset-0 opacity-10 pointer-events-none"
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'repeat',
+                    backgroundRepeat: "repeat",
                   }}
                 />
                 <span className="relative z-10 block text-left text-[16px]">

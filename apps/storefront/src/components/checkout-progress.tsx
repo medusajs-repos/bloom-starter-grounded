@@ -17,10 +17,10 @@ const CheckoutProgress = ({
   return (
     <div className={clsx("flex items-center justify-between w-full", className)}>
       {steps.map((step, index) => {
-        const isCompleted = index < currentStepIndex;
-        const isCurrent = index === currentStepIndex;
-        const isDisabled = index > currentStepIndex;
-        const isLast = index === steps.length - 1;
+        const isCompleted = index < currentStepIndex
+        const isCurrent = index === currentStepIndex
+        const isDisabled = index > currentStepIndex
+        const isLast = index === steps.length - 1
 
         return (
           <div key={step.key} className="flex items-center flex-1 last:flex-none">
@@ -70,10 +70,10 @@ const CheckoutProgress = ({
               />
             )}
           </div>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}
 
-export default CheckoutProgress;
+export default CheckoutProgress

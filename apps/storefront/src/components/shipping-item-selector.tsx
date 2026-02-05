@@ -14,20 +14,20 @@ type ShippingItemSelectorProps = {
 
 // Helper to calculate estimated delivery date
 function getEstimatedDeliveryDate(estimatedDays: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + estimatedDays);
+  const date = new Date()
+  date.setDate(date.getDate() + estimatedDays)
   
   // Format as "Tue, Feb 3" for standard or "tomorrow" for 1 day
   if (estimatedDays === 1) {
-    return "tomorrow";
+    return "tomorrow"
   }
   
   const options: Intl.DateTimeFormatOptions = { 
-    weekday: 'short', 
-    month: 'short', 
-    day: 'numeric' 
-  };
-  return date.toLocaleDateString('en-US', options);
+    weekday: "short", 
+    month: "short", 
+    day: "numeric" 
+  }
+  return date.toLocaleDateString("en-US", options)
 }
 
 const ShippingItemSelector = ({
@@ -38,31 +38,31 @@ const ShippingItemSelector = ({
 }: ShippingItemSelectorProps) => {
   const [calculatedPrice, setCalculatedPrice] = useState<number | undefined>(
     undefined
-  );
+  )
   const isDisabled =
     shippingOption.price_type === "calculated" &&
-    typeof calculatedPrice !== "number";
+    typeof calculatedPrice !== "number"
   const price =
     shippingOption.price_type === "calculated"
       ? calculatedPrice
-      : shippingOption.amount;
+      : shippingOption.amount
 
-  const isFree = price === 0;
-  const estimatedDays = (shippingOption.data?.estimated_days as number) || 5;
-  const estimatedDate = getEstimatedDeliveryDate(estimatedDays);
-  const description = shippingOption.data?.description as string | null;
+  const isFree = price === 0
+  const estimatedDays = (shippingOption.data?.estimated_days as number) || 5
+  const estimatedDate = getEstimatedDeliveryDate(estimatedDays)
+  const description = shippingOption.data?.description as string | null
 
   useEffect(() => {
     if (shippingOption.price_type !== "calculated") {
-      return;
+      return
     }
 
     calculatePriceForShippingOption({
       option_id: shippingOption.id,
     }).then((option) => {
-      setCalculatedPrice(option.amount);
-    });
-  }, [shippingOption.price_type]);
+      setCalculatedPrice(option.amount)
+    })
+  }, [shippingOption.price_type, shippingOption.id])
 
   return (
     <label
@@ -116,7 +116,7 @@ const ShippingItemSelector = ({
         </div>
       </div>
     </label>
-  );
-};
+  )
+}
 
-export default ShippingItemSelector;
+export default ShippingItemSelector

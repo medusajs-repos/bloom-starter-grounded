@@ -1,7 +1,6 @@
 import { DEFAULT_CART_DROPDOWN_FIELDS } from "@/components/cart"
 import ProductOptionSelect from "@/components/product-option-select"
-import ProductPrice from "@/components/product-price"
-import { useCartDrawer } from "@/lib/context/cart"
+import { useCartDrawer } from "@/lib/hooks/use-cart-drawer"
 import { useAddToCart } from "@/lib/hooks/use-cart"
 import { getVariantOptionsKeymap, isVariantInStock } from "@/lib/utils/product"
 import { getCountryCodeFromPath } from "@/lib/utils/region"
@@ -22,7 +21,7 @@ type ProductActionsProps = {
 };
 
 function WishlistButton() {
-  const [isFavorited, setIsFavorited] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false)
 
   return (
     <button
@@ -37,7 +36,7 @@ function WishlistButton() {
         />
       </span>
     </button>
-  );
+  )
 }
 
 const ProductActions = memo(function ProductActions({
@@ -51,41 +50,41 @@ const ProductActions = memo(function ProductActions({
 }: ProductActionsProps) {
   const [internalOptions, setInternalOptions] = useState<
     Record<string, string | undefined>
-  >(initialOptions);
+  >(initialOptions)
   
-  const selectedOptions = externalOptions ?? internalOptions;
+  const selectedOptions = externalOptions ?? internalOptions
   const setSelectedOptions = (options: Record<string, string | undefined>) => {
-    setInternalOptions(options);
-    onOptionsChange?.(options);
-  };
-  const location = useLocation();
-  const countryCode = getCountryCodeFromPath(location.pathname) || "dk";
+    setInternalOptions(options)
+    onOptionsChange?.(options)
+  }
+  const location = useLocation()
+  const countryCode = getCountryCodeFromPath(location.pathname) || "dk"
 
   const addToCartMutation = useAddToCart({
     fields: DEFAULT_CART_DROPDOWN_FIELDS,
-  });
-  const { openCart } = useCartDrawer();
+  })
+  const { openCart } = useCartDrawer()
 
-  const actionsRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null)
 
   // Preselect the first variant's options - only run once on mount
   useEffect(() => {
     if (Object.keys(initialOptions).length > 0) {
       // URL params provided initial options
-      return;
+      return
     }
     if (product?.variants?.length) {
       const optionsKeymap = getVariantOptionsKeymap(
         product?.variants?.[0]?.options ?? []
-      );
-      setInternalOptions(optionsKeymap ?? {});
+      )
+      setInternalOptions(optionsKeymap ?? {})
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product?.handle]);
+  }, [product?.handle])
 
   const selectedVariant = useMemo(() => {
     if (!product?.variants || product?.variants.length === 0) {
-      return;
+      return
     }
 
     // If there's only one variant and no options, select it directly
@@ -93,49 +92,49 @@ const ProductActions = memo(function ProductActions({
       product?.variants.length === 1 &&
       (!product?.options || product?.options.length === 0)
     ) {
-      return product?.variants[0];
+      return product?.variants[0]
     }
 
     const variant = product?.variants.find((v) => {
-      const optionsKeymap = getVariantOptionsKeymap(v?.options ?? []);
-      const matches = isEqual(optionsKeymap, selectedOptions);
+      const optionsKeymap = getVariantOptionsKeymap(v?.options ?? [])
+      const matches = isEqual(optionsKeymap, selectedOptions)
 
-      return matches;
-    });
+      return matches
+    })
 
-    return variant;
-  }, [product?.variants, product?.options, selectedOptions]);
+    return variant
+  }, [product?.variants, product?.options, selectedOptions])
 
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
     const newOptions = {
       ...selectedOptions,
       [optionId]: value,
-    };
-    setSelectedOptions(newOptions);
-  };
+    }
+    setSelectedOptions(newOptions)
+  }
 
   //check if the selected options produce a valid variant
   const isValidVariant = useMemo(() => {
     return product?.variants?.some((v) => {
-      const optionsKeymap = getVariantOptionsKeymap(v?.options ?? []);
-      return isEqual(optionsKeymap, selectedOptions);
-    });
-  }, [product?.variants, selectedOptions]);
+      const optionsKeymap = getVariantOptionsKeymap(v?.options ?? [])
+      return isEqual(optionsKeymap, selectedOptions)
+    })
+  }, [product?.variants, selectedOptions])
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
     // If no variant is selected, we can't add to cart
     if (!selectedVariant) {
-      return false;
+      return false
     }
 
-    return isVariantInStock(selectedVariant);
-  }, [selectedVariant]);
+    return isVariantInStock(selectedVariant)
+  }, [selectedVariant])
 
   // add the selected variant to the cart
   const handleAddToCart = async () => {
-    if (!selectedVariant?.id) return null;
+    if (!selectedVariant?.id) return null
 
     addToCartMutation.mutateAsync(
       {
@@ -148,15 +147,11 @@ const ProductActions = memo(function ProductActions({
       },
       {
         onSuccess: () => {
-          console.log("Item added to cart");
-          openCart();
-        },
-        onError: () => {
-          console.error("Failed to add item to cart");
+          openCart()
         },
       }
-    );
-  };
+    )
+  }
 
   return (
     <div className="flex flex-col gap-y-6" ref={actionsRef}>
@@ -175,7 +170,7 @@ const ProductActions = memo(function ProductActions({
                   disabled={!!disabled || addToCartMutation.isPending}
                 />
               </div>
-            );
+            )
           })}
         </div>
       )}
@@ -204,49 +199,7 @@ const ProductActions = memo(function ProductActions({
 
 
     </div>
-  );
-});
+  )
+})
 
-const TrustBadge = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
-  <div className="flex items-center gap-2.5">
-    <span className="text-neutral-500">{icon}</span>
-    <span className="text-xs text-neutral-600">{text}</span>
-  </div>
-)
-
-const ShippingIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="6" width="15" height="12" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-    <path d="M16 10H19L22 13V17H16V10Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-    <circle cx="6" cy="18" r="2" stroke="currentColor" strokeWidth="1.5"/>
-    <circle cx="18" cy="18" r="2" stroke="currentColor" strokeWidth="1.5"/>
-  </svg>
-)
-
-const DeliveryIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-    <path d="M3 10H21" stroke="currentColor" strokeWidth="1.5"/>
-    <path d="M9 4V10" stroke="currentColor" strokeWidth="1.5"/>
-    <path d="M15 4V10" stroke="currentColor" strokeWidth="1.5"/>
-    <circle cx="12" cy="16" r="2" stroke="currentColor" strokeWidth="1.5"/>
-  </svg>
-)
-
-const ReturnIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 12H7L5 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M3 12L5 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C8.5 3 5.5 5 4 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-  </svg>
-)
-
-const SecureIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-    <path d="M8 11V7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7V11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="12" cy="16" r="1.5" fill="currentColor"/>
-  </svg>
-)
-
-export default ProductActions;
+export default ProductActions

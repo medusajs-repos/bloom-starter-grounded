@@ -2,24 +2,24 @@ import { HttpTypes } from "@medusajs/types"
 
 // ============ STORED COUNTRY CODE ============
 
-export const COUNTRY_CODE_KEY = "medusa_country_code";
+export const COUNTRY_CODE_KEY = "medusa_country_code"
 
 export function getStoredCountryCode(): string | undefined {
-  if (typeof document === "undefined") return undefined;
+  if (typeof document === "undefined") return undefined
 
-  const cookies = document.cookie.split("; ");
+  const cookies = document.cookie.split("; ")
   const countryCodeCookie = cookies.find((row) =>
     row.startsWith(`${COUNTRY_CODE_KEY}=`)
-  );
+  )
 
-  return countryCodeCookie?.split("=")[1] || undefined;
+  return countryCodeCookie?.split("=")[1] || undefined
 }
 
 export function setStoredCountryCode(countryCode: string): void {
-  if (typeof document === "undefined") return;
+  if (typeof document === "undefined") return
 
-  const maxAge = 60 * 60 * 24 * 365; // 1 year in seconds
-  document.cookie = `${COUNTRY_CODE_KEY}=${countryCode}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  const maxAge = 60 * 60 * 24 * 365 // 1 year in seconds
+  document.cookie = `${COUNTRY_CODE_KEY}=${countryCode}; path=/; max-age=${maxAge}; SameSite=Lax`
 }
 
 // ============ COUNTRY CODE FROM PATH ============
@@ -54,7 +54,7 @@ export { getDefaultCountryCode }
 export function buildPathWithCountryCode(currentPath: string, countryCode: string): string {
   const pathWithoutCountry = currentPath.replace(`/${countryCode}`, "") || "/"
   const searchParams = Object.keys(location.search || {}).length > 0
-    ? `?${new URLSearchParams(location.search as any).toString()}`
+    ? `?${new URLSearchParams(location.search).toString()}`
     : ""
   return `/${countryCode}${pathWithoutCountry === "/" ? "" : pathWithoutCountry}${searchParams}`
 }
