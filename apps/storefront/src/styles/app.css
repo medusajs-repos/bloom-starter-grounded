@@ -1,0 +1,148 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+@import "./theme.css";
+
+@layer base {
+  :root {
+    @apply bg-[var(--color-grounded-bg)] text-[var(--color-grounded-text)] antialiased;
+    text-rendering: optimizeLegibility;
+    font-family: var(--font-sans);
+  }
+  
+  html, body {
+    overflow-x: hidden;
+  }
+  
+  /* Global cursor pointer for all clickable elements */
+  button,
+  a,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select,
+  label[for],
+  [onclick],
+  [tabindex]:not([tabindex="-1"]) {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* Content container */
+  .content-container {
+    @apply max-w-[1440px] w-full mx-auto px-6;
+  }
+  
+  /* Grounded button styles */
+  .btn-grounded {
+    @apply bg-[var(--color-grounded-text)] text-white px-8 py-3 text-[13px] tracking-wide uppercase font-medium transition-colors hover:bg-[#333];
+  }
+  
+  .btn-grounded-outline {
+    @apply border border-[var(--color-grounded-text)] text-[var(--color-grounded-text)] px-8 py-3 text-[13px] tracking-wide uppercase font-medium transition-colors hover:bg-[var(--color-grounded-text)] hover:text-white;
+  }
+  
+  /* Link styles */
+  .link-grounded {
+    @apply text-[var(--color-grounded-accent)] hover:text-[var(--color-grounded-accent-dark)] transition-colors;
+  }
+}
+
+@layer utilities {
+  /* Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  input:not([type="checkbox"]):focus ~ label,
+  input:not([type="checkbox"]):not(:placeholder-shown) ~ label {
+    @apply -translate-y-2 text-xs font-medium;
+  }
+
+  input:not([type="checkbox"]):focus ~ label {
+    @apply left-0;
+  }
+  
+  /* Stagger animations */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+}
+
+/* Navigation menu dropdown animations */
+@keyframes dropdown-open {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes dropdown-close {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-1rem);
+  }
+}
+
+/* Drawer animations */
+@keyframes drawer-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(30%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawer-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(30%);
+  }
+}
+
+@keyframes drawer-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drawer-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
