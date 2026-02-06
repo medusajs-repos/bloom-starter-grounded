@@ -1,61 +1,58 @@
-import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MedusaError, Modules } from "@medusajs/framework/utils"
+import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
+import { MedusaError, Modules } from "@medusajs/framework/utils";
 import {
   createCustomersWorkflow,
   linkCustomersToCustomerGroupWorkflow,
-} from "@medusajs/medusa/core-flows"
+} from "@medusajs/medusa/core-flows";
 
 type NewsletterSignupBody = {
-  email: string
-  name?: string
-}
+  email: string;
+  name?: string;
+};
 
 export async function POST(
   req: MedusaRequest<NewsletterSignupBody>,
-  res: MedusaResponse
+  res: MedusaResponse,
 ) {
-  const { email, name } = req.validatedBody
-  const query = req.scope.resolve("query")
+  const { email, name } = req.validatedBody;
+  const query = req.scope.resolve("query");
 
   // Look up Newsletter Subscribers group
   const { data: customerGroups } = await query.graph({
     entity: "customer_group",
     fields: ["id"],
     filters: { name: "Newsletter Subscribers" },
-  })
+  });
 
   if (!customerGroups[0]) {
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,
-      "Newsletter Subscribers group not found"
-    )
+      "Newsletter Subscribers group not found",
+    );
   }
 
-  // Look up existing customer by email, including their customer groups
   const { data: customers } = await query.graph({
     entity: "customer",
     fields: ["id", "groups.id"],
     filters: { email },
-  })
+  });
 
-  let customerId = customers[0]?.id
-  const existingGroups = (customers[0])?.groups || []
+  let customerId = customers[0]?.id;
+  const existingGroups = customers[0]?.groups || [];
 
-  // Check if customer is already subscribed to the newsletter
   const alreadySubscribed = existingGroups.some(
-    (group: { id: string }) => group.id === customerGroups[0].id
-  )
+    (group) => group != null && group.id === customerGroups[0].id,
+  );
 
   if (alreadySubscribed) {
     return res.status(200).json({
       success: false,
       message: "This email is already subscribed to our newsletter",
       alreadySubscribed: true,
-    })
+    });
   }
 
   if (!customerId) {
-    // Create new customer
     const { result } = await createCustomersWorkflow(req.scope).run({
       input: {
         customersData: [
@@ -66,23 +63,21 @@ export async function POST(
           },
         ],
       },
-    })
-    customerId = result[0].id
+    });
+    customerId = result[0].id;
   }
 
-  // Link customer to newsletter group
   await linkCustomersToCustomerGroupWorkflow(req.scope).run({
     input: {
       id: customerGroups[0].id,
       add: [customerId],
     },
-  })
+  });
 
-  // Send welcome email
   try {
-    const notificationModuleService = req.scope.resolve(Modules.NOTIFICATION)
-    
-    const greeting = name ? `Hi ${name},` : "Hi there,"
+    const notificationModuleService = req.scope.resolve(Modules.NOTIFICATION);
+
+    const greeting = name ? `Hi ${name},` : "Hi there,";
     const html = `
 <!DOCTYPE html>
 <html>
@@ -112,7 +107,7 @@ export async function POST(
     </div>
   </div>
 </body>
-</html>`
+</html>`;
 
     await notificationModuleService.createNotifications([
       {
@@ -125,14 +120,13 @@ export async function POST(
           html,
         },
       },
-    ])
+    ]);
   } catch (error) {
-    // Log but don't fail the signup if email fails
-    console.error("Failed to send welcome email:", error)
+    console.error("Failed to send welcome email:", error);
   }
 
   return res.status(200).json({
     success: true,
     message: "Successfully subscribed to newsletter",
-  })
+  });
 }
