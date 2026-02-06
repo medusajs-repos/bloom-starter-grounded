@@ -24,10 +24,7 @@ export default defineConfig(({ mode }) => {
           ]
         : []),
 
-      tanstackStart({
-        target: "netlify",
-        customViteReactPlugin: true,
-      }),
+      tanstackStart(),
       react(),
     ],
 

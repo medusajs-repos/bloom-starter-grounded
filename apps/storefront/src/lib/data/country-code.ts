@@ -1,10 +1,10 @@
 import { listRegions } from "@/lib/data/regions"
 import { getDefaultCountryCode, COUNTRY_CODE_KEY } from "@/lib/utils/region"
 import { createServerFn } from "@tanstack/react-start"
-import { getHeaders, setResponseHeader } from "@tanstack/react-start/server"
+import { getRequestHeaders, setResponseHeader } from "@tanstack/react-start/server"
 
 export const getStoredCountryCode = createServerFn().handler(async () => {
-  const headers = getHeaders()
+  const headers = getRequestHeaders()
 
   let countryCode: string | undefined
 

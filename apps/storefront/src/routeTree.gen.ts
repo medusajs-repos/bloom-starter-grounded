@@ -8,10 +8,9 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createServerRootRoute } from '@tanstack/react-start/server'
-
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StoreRouteImport } from './routes/store'
+import { Route as HealthRouteImport } from './routes/health'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CountryCodeRouteImport } from './routes/$countryCode'
@@ -24,13 +23,15 @@ import { Route as CountryCodeCartRouteImport } from './routes/$countryCode/cart'
 import { Route as CountryCodeProductsHandleRouteImport } from './routes/$countryCode/products/$handle'
 import { Route as CountryCodeCategoriesHandleRouteImport } from './routes/$countryCode/categories/$handle'
 import { Route as CountryCodeOrderOrderIdConfirmedRouteImport } from './routes/$countryCode/order/$orderId/confirmed'
-import { ServerRoute as HealthServerRouteImport } from './routes/health'
-
-const rootServerRouteImport = createServerRootRoute()
 
 const StoreRoute = StoreRouteImport.update({
   id: '/store',
   path: '/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutRoute = CheckoutRouteImport.update({
@@ -96,11 +97,6 @@ const CountryCodeOrderOrderIdConfirmedRoute =
     path: '/order/$orderId/confirmed',
     getParentRoute: () => CountryCodeRoute,
   } as any)
-const HealthServerRoute = HealthServerRouteImport.update({
-  id: '/health',
-  path: '/health',
-  getParentRoute: () => rootServerRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/$countryCode': typeof CountryCodeRouteWithChildren
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
+  '/health': typeof HealthRoute
   '/store': typeof StoreRoute
   '/$countryCode/cart': typeof CountryCodeCartRoute
   '/$countryCode/checkout': typeof CountryCodeCheckoutRoute
@@ -122,6 +119,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
+  '/health': typeof HealthRoute
   '/store': typeof StoreRoute
   '/$countryCode/cart': typeof CountryCodeCartRoute
   '/$countryCode/checkout': typeof CountryCodeCheckoutRoute
@@ -138,6 +136,7 @@ export interface FileRoutesById {
   '/$countryCode': typeof CountryCodeRouteWithChildren
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
+  '/health': typeof HealthRoute
   '/store': typeof StoreRoute
   '/$countryCode/cart': typeof CountryCodeCartRoute
   '/$countryCode/checkout': typeof CountryCodeCheckoutRoute
@@ -155,6 +154,7 @@ export interface FileRouteTypes {
     | '/$countryCode'
     | '/cart'
     | '/checkout'
+    | '/health'
     | '/store'
     | '/$countryCode/cart'
     | '/$countryCode/checkout'
@@ -169,6 +169,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/cart'
     | '/checkout'
+    | '/health'
     | '/store'
     | '/$countryCode/cart'
     | '/$countryCode/checkout'
@@ -184,6 +185,7 @@ export interface FileRouteTypes {
     | '/$countryCode'
     | '/cart'
     | '/checkout'
+    | '/health'
     | '/store'
     | '/$countryCode/cart'
     | '/$countryCode/checkout'
@@ -200,28 +202,8 @@ export interface RootRouteChildren {
   CountryCodeRoute: typeof CountryCodeRouteWithChildren
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
+  HealthRoute: typeof HealthRoute
   StoreRoute: typeof StoreRoute
-}
-export interface FileServerRoutesByFullPath {
-  '/health': typeof HealthServerRoute
-}
-export interface FileServerRoutesByTo {
-  '/health': typeof HealthServerRoute
-}
-export interface FileServerRoutesById {
-  __root__: typeof rootServerRouteImport
-  '/health': typeof HealthServerRoute
-}
-export interface FileServerRouteTypes {
-  fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: '/health'
-  fileServerRoutesByTo: FileServerRoutesByTo
-  to: '/health'
-  id: '__root__' | '/health'
-  fileServerRoutesById: FileServerRoutesById
-}
-export interface RootServerRouteChildren {
-  HealthServerRoute: typeof HealthServerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -231,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/store'
       fullPath: '/store'
       preLoaderRoute: typeof StoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout': {
@@ -319,17 +308,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-declare module '@tanstack/react-start/server' {
-  interface ServerFileRoutesByPath {
-    '/health': {
-      id: '/health'
-      path: '/health'
-      fullPath: '/health'
-      preLoaderRoute: typeof HealthServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-  }
-}
 
 interface CountryCodeRouteChildren {
   CountryCodeCartRoute: typeof CountryCodeCartRoute
@@ -361,14 +339,18 @@ const rootRouteChildren: RootRouteChildren = {
   CountryCodeRoute: CountryCodeRouteWithChildren,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
+  HealthRoute: HealthRoute,
   StoreRoute: StoreRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-const rootServerRouteChildren: RootServerRouteChildren = {
-  HealthServerRoute: HealthServerRoute,
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
 }
-export const serverRouteTree = rootServerRouteImport
-  ._addFileChildren(rootServerRouteChildren)
-  ._addFileTypes<FileServerRouteTypes>()
