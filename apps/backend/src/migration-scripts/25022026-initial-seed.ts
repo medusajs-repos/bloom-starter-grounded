@@ -541,7 +541,7 @@ export default async function migration_25022026_initial_seed({
             status: "published" as const,
             is_giftcard: false,
             discountable: true,
-            category_ids: [getCategoryId("sofas")],
+            category_ids: [getCategoryId("sofas")].filter((id): id is string => !!id),
             thumbnail: variantImageMappings["Charcoal"][0],
             images: sofaOpqAllImages.map(url => ({ url })),
             options: [
@@ -570,7 +570,7 @@ export default async function migration_25022026_initial_seed({
             status: "published" as const,
             is_giftcard: false,
             discountable: true,
-            category_ids: [getCategoryId("sofas")],
+            category_ids: [getCategoryId("sofas")].filter((id): id is string => !!id),
             thumbnail: sofaXyzVariantImages["Charcoal"][0],
             images: sofaXyzAllImages.map(url => ({ url })),
             options: [
@@ -595,7 +595,7 @@ export default async function migration_25022026_initial_seed({
             status: "published" as const,
             is_giftcard: false,
             discountable: true,
-            category_ids: [getCategoryId("sofas")],
+            category_ids: [getCategoryId("sofas")].filter((id): id is string => !!id),
             thumbnail: sofaBcdVariantImages["Sage"][0],
             images: sofaBcdAllImages.map(url => ({ url })),
             options: [
