@@ -99,7 +99,7 @@ const ProductDetails = () => {
   // Get the selected variant
   const selectedVariant = useMemo(() => {
     if (!product.variants?.length || !selectedVariantId) return null
-    return product.variants.find((v) => v.id === selectedVariantId) || null
+    return product.variants.find((v: HttpTypes.StoreProductVariant) => v.id === selectedVariantId) || null
   }, [product.variants, selectedVariantId])
 
   // Convert selected variant to options map for ProductActions
