@@ -1,3 +1,4 @@
+import { CheckoutStepKey } from "@/lib/types/global"
 import {
   Drawer,
   DrawerContent,
@@ -711,7 +712,7 @@ export const CartDropdown = ({ variant = "dark" }: CartDropdownProps) => {
             {/* Action buttons */}
             <div className="flex items-center gap-3">
               {termsAccepted ? (
-                <Link to="/$countryCode/checkout" params={{ countryCode }} search={{ step: "addresses" }} onClick={closeCart} className="flex-1">
+                <Link to="/$countryCode/checkout" params={{ countryCode }} search={{ step: CheckoutStepKey.ADDRESSES }} onClick={closeCart} className="flex-1">
                   <button className="w-full h-[48px] px-6 bg-black hover:bg-gray-800 text-white text-[20px] font-medium rounded-none transition-colors flex items-center justify-center gap-2">
                     <span>Go to checkout</span>
                     <span>

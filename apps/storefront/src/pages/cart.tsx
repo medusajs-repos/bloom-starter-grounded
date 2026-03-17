@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Loading } from "@/components/ui/loading"
 import { useCart, useCreateCart } from "@/lib/hooks/use-cart"
 import { sortCartItems } from "@/lib/utils/cart"
+import { CheckoutStepKey } from "@/lib/types/global"
 import { Link, useLoaderData } from "@tanstack/react-router"
 
 const DEFAULT_CART_FIELDS =
@@ -78,7 +79,7 @@ const Cart = () => {
                 <CartPromo cart={cart} />
               </div>
 
-              <Link to={`/$countryCode/checkout`} params={{ countryCode }} search={{ step: "addresses" }}>
+              <Link to={`/$countryCode/checkout`} params={{ countryCode }} search={{ step: CheckoutStepKey.ADDRESSES }}>
                 <Button className="w-full">Checkout</Button>
               </Link>
             </div>
