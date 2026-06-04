@@ -2,61 +2,96 @@ import ProductRowCard from "@/components/product-row-card"
 import { SortDrawer, SortOption } from "@/components/sort-drawer"
 import { FilterDrawer, FilterState } from "@/components/filter-drawer"
 import { useProducts, useProductCount } from "@/lib/hooks/use-products"
-import { useLoaderData } from "@tanstack/react-router"
+import { useLoaderData, useNavigate, useRouterState } from "@tanstack/react-router"
 import { useState, useEffect, useMemo } from "react"
 import { HttpTypes } from "@medusajs/types"
+import {
+  OPTION_VALUE_QUERY_KEY,
+  parseOptionValueIds,
+  serializeOptionValueIds,
+} from "@/lib/utils/option-values"
 
 type ViewMode = "list" | "grid"
 
-// Available colors in the store
-const AVAILABLE_COLORS = [
-  "Charcoal",
-  "Ivory",
-  "Sage",
-  "Terracotta",
-  "Navy",
-  "Camel",
-  "Slate",
-  "Blush",
-]
-
 const Store = () => {
   const { region } = useLoaderData({ from: "/$countryCode/store" })
+  const navigate = useNavigate()
+  const location = useRouterState({ select: (s) => s.location })
+
   const [viewMode] = useState<ViewMode>("list")
   const [controlsVisible, setControlsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
   const [sortDrawerOpen, setSortDrawerOpen] = useState(false)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
   const [currentSort, setCurrentSort] = useState<SortOption>("featured")
-  const [filters, setFilters] = useState<FilterState>({ colors: [], inStock: false })
+  const [inStock, setInStock] = useState(false)
+
+  // Parse option value IDs from URL
+  const optionValueIds = useMemo(() => {
+    const search = (location.search ?? {}) as Record<
+      string,
+      string | string[] | undefined
+    >
+    return parseOptionValueIds(search)
+  }, [location.search])
+
+  const filters: FilterState = useMemo(
+    () => ({ optionValueIds, inStock }),
+    [optionValueIds, inStock]
+  )
+
+  const handleFiltersChange = (next: FilterState) => {
+    setInStock(next.inStock)
+
+    // Build updated search params; also strip `page` when filter changes.
+    const currentSearch = (location.search ?? {}) as Record<string, unknown>
+    const nextSearch: Record<string, unknown> = { ...currentSearch }
+
+    const serialized = serializeOptionValueIds(next.optionValueIds)
+    if (serialized) {
+      nextSearch[OPTION_VALUE_QUERY_KEY] = serialized
+    } else {
+      delete nextSearch[OPTION_VALUE_QUERY_KEY]
+    }
+    delete nextSearch.page
+
+    // Skip the navigate when nothing actually changed
+    const sameKeys =
+      Object.keys(currentSearch).length === Object.keys(nextSearch).length &&
+      Object.keys(nextSearch).every(
+        (k) => (currentSearch as Record<string, unknown>)[k] === nextSearch[k]
+      )
+    if (sameKeys) {
+      return
+    }
+
+    navigate({
+      to: ".",
+      search: nextSearch,
+      replace: true,
+    })
+  }
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
-      
-      // Always show when near top
       if (currentScrollY < 50) {
         setControlsVisible(true)
-      } 
-      // Show when scrolling up
-      else if (currentScrollY < lastScrollY) {
+      } else if (currentScrollY < lastScrollY) {
         setControlsVisible(true)
-      } 
-      // Hide when scrolling down
-      else if (currentScrollY > lastScrollY) {
+      } else if (currentScrollY > lastScrollY) {
         setControlsVisible(false)
       }
-      
       setLastScrollY(currentScrollY)
     }
-
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [lastScrollY])
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } = useProducts({
     region_id: region.id,
-    query_params: { limit: 50 },
+    query_params: { limit: 100 },
+    optionValueIds,
   })
 
   const { data: productCount } = useProductCount({ region_id: region.id })
@@ -65,31 +100,15 @@ const Store = () => {
   const products = useMemo(() => {
     const rawProducts = data?.pages.flatMap((page) => page.products) || []
     let filtered = [...rawProducts]
-    
-    // Apply color filter
-    if (filters.colors.length > 0) {
-      filtered = filtered.filter((product) => {
-        // Check if any variant has a matching color option
-        return product.variants?.some((variant) => {
-          return variant.options?.some((opt) => {
-            const optionWithTitle = opt as typeof opt & { option?: { title?: string } }
-            return optionWithTitle.option?.title === "Color" && filters.colors.includes(opt.value ?? "")
-          })
-        })
-      })
-    }
 
-    // Apply in-stock filter
-    if (filters.inStock) {
+    if (inStock) {
       filtered = filtered.filter((product) => {
         return product.variants?.some((variant) => {
-          // Check if variant is in stock (inventory quantity > 0 or not managed)
           return (variant.inventory_quantity ?? 0) > 0 || !variant.manage_inventory
         })
       })
     }
-    
-    // Sort
+
     const sorted = filtered
     switch (currentSort) {
       case "alpha_asc":
@@ -121,19 +140,21 @@ const Store = () => {
           return dateB - dateA
         })
       case "best_selling":
-        // Best selling would require sales data, for now keep original order
         return sorted
       case "featured":
       default:
-        // Featured keeps original/API order
         return sorted
     }
-  }, [data?.pages, currentSort, filters])
+  }, [data?.pages, currentSort, inStock])
+
+  // Show the locally-filtered count when an in-store filter (e.g. inStock) is
+  // applied, otherwise show the server-side total so we don't surface ghost
+  // pages.
+  const displayCount = inStock ? products.length : productCount
 
   return (
     <div className="bg-white min-h-screen overflow-x-hidden leading-none">
-      {/* Fixed Controls */}
-      <div 
+      <div
         className={`fixed bottom-2 left-2 right-2 md:left-auto md:bottom-auto md:top-[56px] z-50 flex items-center gap-2 transition-transform duration-300 ${
           controlsVisible ? "translate-y-0 md:translate-x-0" : "translate-y-[calc(100%+8px)] md:translate-y-0 md:translate-x-[calc(100%+8px)]"
         }`}
@@ -148,12 +169,10 @@ const Store = () => {
           open={filterDrawerOpen}
           onOpenChange={setFilterDrawerOpen}
           filters={filters}
-          onFiltersChange={setFilters}
-          availableColors={AVAILABLE_COLORS}
+          onFiltersChange={handleFiltersChange}
         />
       </div>
 
-      {/* Header */}
       <div className="w-full pt-12">
         <div className="pt-4 px-4 pb-16 md:pt-8 md:px-8 md:pb-28">
           <div className="flex items-start">
@@ -161,13 +180,12 @@ const Store = () => {
               All Products
             </h1>
             <span className="text-lg text-black leading-none">
-              {productCount ?? ""}
+              {displayCount ?? ""}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Products */}
       <div className="w-full pb-[160px]">
         {isFetching && products.length === 0 ? (
           <div className="space-y-0">
@@ -185,15 +203,14 @@ const Store = () => {
           <>
             <div className="border-t border-[#e5e5e5]">
               {products.map((product, index) => (
-                <ProductRowCard 
-                  key={product.id} 
-                  product={product} 
+                <ProductRowCard
+                  key={product.id}
+                  product={product}
                   isLast={index === products.length - 1}
                 />
               ))}
             </div>
 
-            {/* Load more */}
             {hasNextPage && (
               <div className="flex justify-center mt-12">
                 <button
@@ -207,9 +224,9 @@ const Store = () => {
             )}
           </>
         ) : (
-          <GridView 
-            products={products} 
-            hasNextPage={hasNextPage} 
+          <GridView
+            products={products}
+            hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
             fetchNextPage={fetchNextPage}
           />
@@ -219,7 +236,6 @@ const Store = () => {
   )
 }
 
-// Grid view fallback
 const GridView = ({
   products,
   hasNextPage,
@@ -232,16 +248,15 @@ const GridView = ({
   fetchNextPage: () => void
 }) => {
   const { countryCode } = useLoaderData({ from: "/$countryCode/store" })
-  
+
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10 pt-8">
         {products.map((product) => {
-          // Get thumbnail from first variant's images
           const firstVariant = product.variants?.[0] as HttpTypes.StoreProductVariant & { images?: { url: string }[] }
           const variantImages = firstVariant?.images
           const thumbnail = variantImages?.[0]?.url || product.thumbnail
-          
+
           return (
             <a
               key={product.id}
