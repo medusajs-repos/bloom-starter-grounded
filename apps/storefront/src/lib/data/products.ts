@@ -49,14 +49,23 @@ import { HttpTypes } from "@medusajs/types"
  * }
  * ```
  */
+// Local extension to the SDK params: `option_value_id` was introduced together
+// with global product options. The published SDK type may not include it yet.
+export type StoreProductListParamsWithOptionValue =
+  HttpTypes.StoreProductListParams & {
+    option_value_id?: string | string[]
+  }
+
 export const listProducts = async ({
   page_param = 1,
   query_params,
   region_id,
+  optionValueIds,
 }: {
   page_param?: number;
-  query_params?: HttpTypes.StoreProductListParams;
+  query_params?: StoreProductListParamsWithOptionValue;
   region_id?: string;
+  optionValueIds?: string[];
 }): Promise<{
   products: HttpTypes.StoreProduct[];
   count: number;
@@ -66,12 +75,20 @@ export const listProducts = async ({
   const _page_param = Math.max(page_param, 1)
   const offset = _page_param === 1 ? 0 : (_page_param - 1) * limit
 
+  const dedupedOptionValueIds =
+    optionValueIds && optionValueIds.length > 0
+      ? Array.from(new Set(optionValueIds))
+      : undefined
+
   const response = await sdk.store.product.list({
     limit,
     offset,
     region_id,
     ...query_params,
-  })
+    ...(dedupedOptionValueIds
+      ? { option_value_id: dedupedOptionValueIds }
+      : {}),
+  } as StoreProductListParamsWithOptionValue)
 
   const next_page = offset + limit < response.count ? _page_param + 1 : null
 
