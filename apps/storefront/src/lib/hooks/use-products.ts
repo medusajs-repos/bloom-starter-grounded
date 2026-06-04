@@ -2,16 +2,24 @@ import { useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { HttpTypes } from "@medusajs/types"
 import { queryKeys } from "@/lib/utils/query-keys"
 import { sdk } from "@/lib/utils/sdk"
+import type { StoreProductListParamsWithOptionValue } from "@/lib/data/products"
 
 export const useProducts = ({
   query_params,
   region_id,
+  optionValueIds,
 }: {
-  query_params?: HttpTypes.StoreProductListParams
+  query_params?: StoreProductListParamsWithOptionValue
   region_id?: string
+  optionValueIds?: string[]
 } = {}) => {
+  const dedupedOptionValueIds =
+    optionValueIds && optionValueIds.length > 0
+      ? Array.from(new Set(optionValueIds))
+      : undefined
+
   return useInfiniteQuery({
-    queryKey: queryKeys.products.list(query_params, region_id),
+    queryKey: queryKeys.products.list(query_params, region_id, dedupedOptionValueIds),
     queryFn: async ({ pageParam }) => {
       const limit = query_params?.limit || 12
       const _page_param = Math.max(pageParam, 1)
@@ -21,9 +29,12 @@ export const useProducts = ({
         limit,
         offset,
         region_id,
-        fields: "*variants, +variants.inventory_quantity, *variants.images, *images, *options, *options.values, *collection, *tags, +metadata",
+        fields: "*variants, *variants.options, +variants.inventory_quantity, *variants.images, *images, *options, *options.values, *collection, *tags, +metadata",
         ...query_params,
-      })
+        ...(dedupedOptionValueIds
+          ? { option_value_id: dedupedOptionValueIds }
+          : {}),
+      } as StoreProductListParamsWithOptionValue)
 
       const next_page = offset + limit < response.count ? _page_param + 1 : null
 
