@@ -8,6 +8,7 @@ import {
     batchVariantImagesWorkflow,
     createDefaultsWorkflow,
     createProductCategoriesWorkflow,
+    createProductOptionsWorkflow,
     createProductsWorkflow,
     createRegionsWorkflow,
     createShippingOptionsWorkflow,
@@ -532,6 +533,62 @@ export default async function migration_25022026_initial_seed({
         ...sofaBcdVariantImages["Navy"],
     ];
 
+    // Create (or reuse) the global Color product option shared across products.
+    const ALL_COLORS = [
+        "Charcoal",
+        "Ivory",
+        "Sage",
+        "Terracotta",
+        "Navy",
+        "Camel",
+        "Blush",
+        "Slate",
+    ];
+
+    const { data: existingGlobalOptions } = await query.graph({
+        entity: "product_option",
+        fields: ["id", "title", "is_exclusive", "values.id", "values.value"],
+        filters: { is_exclusive: false, title: "Color" },
+    });
+
+    let colorOption = existingGlobalOptions?.[0];
+
+    if (!colorOption) {
+        logger.info("Creating global Color product option...");
+        const { result: createdOptions } = await createProductOptionsWorkflow(
+            container
+        ).run({
+            input: {
+                product_options: [
+                    {
+                        title: "Color",
+                        values: ALL_COLORS,
+                    },
+                ],
+            },
+        });
+        // Re-fetch with values via query graph for consistent shape
+        const { data: refetched } = await query.graph({
+            entity: "product_option",
+            fields: ["id", "title", "is_exclusive", "values.id", "values.value"],
+            filters: { id: createdOptions.map((o: any) => o.id) },
+        });
+        colorOption = refetched[0];
+    } else {
+        logger.info("Global Color option already exists, reusing...");
+    }
+
+    // Build lookup from color name → value id
+    const colorValueIdByName: Record<string, string> = {};
+    for (const v of (colorOption?.values || []) as Array<{ id: string; value: string }>) {
+        colorValueIdByName[v.value] = v.id;
+    }
+
+    const colorIdsFor = (colors: string[]): string[] =>
+        colors
+            .map((c) => colorValueIdByName[c])
+            .filter((id): id is string => !!id);
+
     const productsToCreate = [
         {
             title: "Sofa OPQ",
@@ -546,8 +603,8 @@ export default async function migration_25022026_initial_seed({
             images: sofaOpqAllImages.map(url => ({ url })),
             options: [
                 {
-                    title: "Color",
-                    values: ["Charcoal", "Ivory", "Sage", "Terracotta", "Navy", "Camel", "Blush", "Slate"],
+                    id: colorOption.id,
+                    value_ids: colorIdsFor(["Charcoal", "Ivory", "Sage", "Terracotta", "Navy", "Camel", "Blush", "Slate"]),
                 },
             ],
             variants: [
@@ -575,8 +632,8 @@ export default async function migration_25022026_initial_seed({
             images: sofaXyzAllImages.map(url => ({ url })),
             options: [
                 {
-                    title: "Color",
-                    values: ["Charcoal", "Ivory", "Sage", "Navy"],
+                    id: colorOption.id,
+                    value_ids: colorIdsFor(["Charcoal", "Ivory", "Sage", "Navy"]),
                 },
             ],
             variants: [
@@ -600,8 +657,8 @@ export default async function migration_25022026_initial_seed({
             images: sofaBcdAllImages.map(url => ({ url })),
             options: [
                 {
-                    title: "Color",
-                    values: ["Sage", "Ivory", "Charcoal", "Camel", "Terracotta", "Navy"],
+                    id: colorOption.id,
+                    value_ids: colorIdsFor(["Sage", "Ivory", "Charcoal", "Camel", "Terracotta", "Navy"]),
                 },
             ],
             variants: [
