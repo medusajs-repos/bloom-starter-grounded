@@ -1,4 +1,5 @@
 import { CartDropdown } from "@/components/cart"
+import { SearchDrawer } from "@/components/search/search-drawer"
 import { XMark } from "@medusajs/icons"
 import { MegaMenu } from "@/components/mega-menu"
 import {
@@ -62,6 +63,7 @@ export const Navbar = () => {
   const baseHref = countryCode ? `/${countryCode}` : ""
   const { variant, isScrolled } = useNavbar()
   
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
 
@@ -125,7 +127,13 @@ export const Navbar = () => {
 
           {/* Right - Icons */}
           <div className="flex items-center">
-            <button className={`hidden lg:flex items-center justify-center w-[28px] h-[28px] rounded-none transition-colors ${useSolidStyle ? "text-neutral-800 hover:bg-neutral-100" : "text-white hover:bg-white/10"}`}>
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="Search products"
+              data-testid="nav-search-button"
+              className={`flex items-center justify-center w-[28px] h-[28px] rounded-none transition-colors ${useSolidStyle ? "text-neutral-800 hover:bg-neutral-100" : "text-white hover:bg-white/10"}`}
+            >
               <SearchIcon />
             </button>
             <button className={`hidden lg:flex items-center justify-center w-[28px] h-[28px] rounded-none transition-colors ${useSolidStyle ? "text-neutral-800 hover:bg-neutral-100" : "text-white hover:bg-white/10"}`}>
@@ -218,6 +226,8 @@ export const Navbar = () => {
                     </DrawerClose>
                     <DrawerClose asChild>
                       <button
+                        type="button"
+                        onClick={() => setIsSearchOpen(true)}
                         className="px-6 py-3 text-black hover:bg-neutral-100 transition-colors text-[16px] text-left"
                       >
                         Search
@@ -230,6 +240,8 @@ export const Navbar = () => {
           </div>
         </nav>
       </header>
+
+      <SearchDrawer open={isSearchOpen} onOpenChange={setIsSearchOpen} />
     </div>
   )
 }

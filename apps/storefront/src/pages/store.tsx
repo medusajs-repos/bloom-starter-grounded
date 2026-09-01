@@ -1,76 +1,157 @@
-import ProductRowCard from "@/components/product-row-card"
-import { SortDrawer, SortOption } from "@/components/sort-drawer"
-import { FilterDrawer, FilterState } from "@/components/filter-drawer"
-import { useProducts, useProductCount } from "@/lib/hooks/use-products"
-import { useLoaderData, useNavigate, useRouterState } from "@tanstack/react-router"
-import { useState, useEffect, useMemo } from "react"
-import { HttpTypes } from "@medusajs/types"
+import { AppliedRefinements } from "@/components/search/applied-refinements"
+import { PersistentRefinements } from "@/components/search/persistent-refinements"
+import { SearchFilterDrawer } from "@/components/search/search-filter-drawer"
+import { SearchPagination } from "@/components/search/search-pagination"
+import { SearchSortDrawer } from "@/components/search/search-sort-drawer"
 import {
-  OPTION_VALUE_QUERY_KEY,
-  parseOptionValueIds,
-  serializeOptionValueIds,
-} from "@/lib/utils/option-values"
+  StoreHitRow,
+  type StoreProductHit,
+} from "@/components/search/store-hit-row"
+import { useSearchSettled } from "@/lib/hooks/use-search-settled"
+import {
+  PRODUCT_INDEX_NAME,
+  STORE_HITS_PER_PAGE,
+  searchClient,
+} from "@/lib/search-client"
+import { productSearchRouting } from "@/lib/search-routing"
+import { MagnifyingGlass } from "@medusajs/icons"
+import { useLoaderData } from "@tanstack/react-router"
+import type { SearchClient } from "instantsearch.js"
+import { useCallback, useEffect, useRef, useState } from "react"
+import {
+  Configure,
+  InstantSearch,
+  useHits,
+  useInstantSearch,
+  useSearchBox,
+  useStats,
+} from "react-instantsearch"
 
-type ViewMode = "list" | "grid"
+const DEBOUNCE_MS = 250
 
-const Store = () => {
-  const { region } = useLoaderData({ from: "/$countryCode/store" })
-  const navigate = useNavigate()
-  const location = useRouterState({ select: (s) => s.location })
+const MAX_VALUES_PER_FACET = 200
 
-  const [viewMode] = useState<ViewMode>("list")
+const StoreResults = ({ countryCode }: { countryCode: string }) => {
+  const timer = useRef<number | undefined>(undefined)
+
+  const queryHook = useCallback(
+    (nextQuery: string, search: (value: string) => void) => {
+      window.clearTimeout(timer.current)
+      timer.current = window.setTimeout(() => search(nextQuery), DEBOUNCE_MS)
+    },
+    []
+  )
+
+  const { query, refine } = useSearchBox({ queryHook })
+  const { items } = useHits<StoreProductHit>()
+  const { nbHits } = useStats()
+  const { status, error } = useInstantSearch()
+  const { isSettled, resultsQuery } = useSearchSettled()
+
+  const [inputValue, setInputValue] = useState(query)
+
+  useEffect(() => () => window.clearTimeout(timer.current), [])
+
+  const hasInput = Boolean(inputValue.trim())
+
+  const hasStaleEmptyQueryHits = hasInput && !resultsQuery
+
+  const hasResults = !hasStaleEmptyQueryHits && items.length > 0
+
+  const isLoadingWithNothingToShow =
+    !hasResults && status !== "error" && (!isSettled || hasStaleEmptyQueryHits)
+
+  return (
+    <>
+      <StoreControls />
+
+      <div className="w-full pt-12">
+        <div className="pt-4 px-4 pb-6 md:pt-8 md:px-8">
+          <div className="flex items-start">
+            <h1 className="text-[40px] md:text-[56px] font-normal text-[#1a1a1a] leading-[0.8] tracking-[-0.02em]">
+              All Products
+            </h1>
+            <span className="text-lg text-black leading-none">
+              {isSettled ? nbHits : ""}
+            </span>
+          </div>
+        </div>
+
+        <div className="px-4 md:px-8 pb-6">
+          <div className="flex items-center gap-x-3 border-b border-neutral-200 max-w-md">
+            <MagnifyingGlass className="flex-shrink-0 text-neutral-500" />
+            <input
+              type="search"
+              value={inputValue}
+              onChange={(event) => {
+                setInputValue(event.target.value)
+                refine(event.target.value)
+              }}
+              placeholder="Search products"
+              aria-label="Search products"
+              className="w-full bg-transparent py-3 text-[16px] text-neutral-900 outline-none placeholder:text-neutral-500"
+              data-testid="store-search-input"
+            />
+          </div>
+        </div>
+      </div>
+
+      <AppliedRefinements />
+
+      <div className="w-full pb-[160px]">
+        {status === "error" ? (
+          <div
+            className="text-center py-24 border-t border-[#e5e5e5]"
+            data-testid="store-search-error"
+          >
+            <p className="text-red-600 text-[13px]">
+              Couldn&apos;t load products
+              {error?.message ? `: ${error.message}` : "."}
+            </p>
+          </div>
+        ) : hasResults ? (
+          <>
+            <div className="border-t border-[#e5e5e5]" data-testid="store-hits">
+              {items.map((hit, index) => (
+                <StoreHitRow
+                  key={hit.objectID}
+                  hit={hit}
+                  countryCode={countryCode}
+                  isLast={index === items.length - 1}
+                />
+              ))}
+            </div>
+
+            <SearchPagination />
+          </>
+        ) : isLoadingWithNothingToShow ? (
+          <div className="space-y-0" data-testid="store-loading">
+            {Array.from({ length: 6 }, (_, index) => (
+              <ProductRowSkeleton key={`skeleton-${index}`} />
+            ))}
+          </div>
+        ) : (
+          <div
+            className="text-center py-24 border-t border-[#e5e5e5]"
+            data-testid="store-no-results"
+          >
+            <p className="text-[#999] text-[13px]">
+              {resultsQuery
+                ? `No products found for "${resultsQuery}"`
+                : "No products found"}
+            </p>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+const StoreControls = () => {
   const [controlsVisible, setControlsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
   const [sortDrawerOpen, setSortDrawerOpen] = useState(false)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
-  const [currentSort, setCurrentSort] = useState<SortOption>("featured")
-  const [inStock, setInStock] = useState(false)
-
-  // Parse option value IDs from URL
-  const optionValueIds = useMemo(() => {
-    const search = (location.search ?? {}) as Record<
-      string,
-      string | string[] | undefined
-    >
-    return parseOptionValueIds(search)
-  }, [location.search])
-
-  const filters: FilterState = useMemo(
-    () => ({ optionValueIds, inStock }),
-    [optionValueIds, inStock]
-  )
-
-  const handleFiltersChange = (next: FilterState) => {
-    setInStock(next.inStock)
-
-    // Build updated search params; also strip `page` when filter changes.
-    const currentSearch = (location.search ?? {}) as Record<string, unknown>
-    const nextSearch: Record<string, unknown> = { ...currentSearch }
-
-    const serialized = serializeOptionValueIds(next.optionValueIds)
-    if (serialized) {
-      nextSearch[OPTION_VALUE_QUERY_KEY] = serialized
-    } else {
-      delete nextSearch[OPTION_VALUE_QUERY_KEY]
-    }
-    delete nextSearch.page
-
-    // Skip the navigate when nothing actually changed
-    const sameKeys =
-      Object.keys(currentSearch).length === Object.keys(nextSearch).length &&
-      Object.keys(nextSearch).every(
-        (k) => (currentSearch as Record<string, unknown>)[k] === nextSearch[k]
-      )
-    if (sameKeys) {
-      return
-    }
-
-    navigate({
-      to: ".",
-      search: nextSearch,
-      replace: true,
-    })
-  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -88,216 +169,72 @@ const Store = () => {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [lastScrollY])
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } = useProducts({
-    region_id: region.id,
-    query_params: { limit: 100 },
-    optionValueIds,
-  })
-
-  const { data: productCount } = useProductCount({ region_id: region.id })
-
-  // Filter and sort products
-  const products = useMemo(() => {
-    const rawProducts = data?.pages.flatMap((page) => page.products) || []
-    let filtered = [...rawProducts]
-
-    if (inStock) {
-      filtered = filtered.filter((product) => {
-        return product.variants?.some((variant) => {
-          return (variant.inventory_quantity ?? 0) > 0 || !variant.manage_inventory
-        })
-      })
-    }
-
-    const sorted = filtered
-    switch (currentSort) {
-      case "alpha_asc":
-        return sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""))
-      case "alpha_desc":
-        return sorted.sort((a, b) => (b.title || "").localeCompare(a.title || ""))
-      case "price_asc":
-        return sorted.sort((a, b) => {
-          const priceA = a.variants?.[0]?.calculated_price?.calculated_amount ?? 0
-          const priceB = b.variants?.[0]?.calculated_price?.calculated_amount ?? 0
-          return priceA - priceB
-        })
-      case "price_desc":
-        return sorted.sort((a, b) => {
-          const priceA = a.variants?.[0]?.calculated_price?.calculated_amount ?? 0
-          const priceB = b.variants?.[0]?.calculated_price?.calculated_amount ?? 0
-          return priceB - priceA
-        })
-      case "date_asc":
-        return sorted.sort((a, b) => {
-          const dateA = new Date(a.created_at || 0).getTime()
-          const dateB = new Date(b.created_at || 0).getTime()
-          return dateA - dateB
-        })
-      case "date_desc":
-        return sorted.sort((a, b) => {
-          const dateA = new Date(a.created_at || 0).getTime()
-          const dateB = new Date(b.created_at || 0).getTime()
-          return dateB - dateA
-        })
-      case "best_selling":
-        return sorted
-      case "featured":
-      default:
-        return sorted
-    }
-  }, [data?.pages, currentSort, inStock])
-
-  // Show the locally-filtered count when an in-store filter (e.g. inStock) is
-  // applied, otherwise show the server-side total so we don't surface ghost
-  // pages.
-  const displayCount = inStock ? products.length : productCount
-
   return (
-    <div className="bg-white min-h-screen overflow-x-hidden leading-none">
-      <div
-        className={`fixed bottom-2 left-2 right-2 md:left-auto md:bottom-auto md:top-[56px] z-50 flex items-center gap-2 transition-transform duration-300 ${
-          controlsVisible ? "translate-y-0 md:translate-x-0" : "translate-y-[calc(100%+8px)] md:translate-y-0 md:translate-x-[calc(100%+8px)]"
-        }`}
-      >
-        <SortDrawer
-          open={sortDrawerOpen}
-          onOpenChange={setSortDrawerOpen}
-          currentSort={currentSort}
-          onSortChange={setCurrentSort}
-        />
-        <FilterDrawer
-          open={filterDrawerOpen}
-          onOpenChange={setFilterDrawerOpen}
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-        />
-      </div>
-
-      <div className="w-full pt-12">
-        <div className="pt-4 px-4 pb-16 md:pt-8 md:px-8 md:pb-28">
-          <div className="flex items-start">
-            <h1 className="text-[40px] md:text-[56px] font-normal text-[#1a1a1a] leading-[0.8] tracking-[-0.02em]">
-              All Products
-            </h1>
-            <span className="text-lg text-black leading-none">
-              {displayCount ?? ""}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="w-full pb-[160px]">
-        {isFetching && products.length === 0 ? (
-          <div className="space-y-0">
-            {[...Array(6)].map((_, i) => (
-              <ProductRowSkeleton key={`skeleton-${i}`} />
-            ))}
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-24 border-t border-[#e5e5e5]">
-            <p className="text-[#999] text-[13px]">
-              No products found
-            </p>
-          </div>
-        ) : viewMode === "list" ? (
-          <>
-            <div className="border-t border-[#e5e5e5]">
-              {products.map((product, index) => (
-                <ProductRowCard
-                  key={product.id}
-                  product={product}
-                  isLast={index === products.length - 1}
-                />
-              ))}
-            </div>
-
-            {hasNextPage && (
-              <div className="flex justify-center mt-12">
-                <button
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
-                  className="text-[13px] text-[#1a1a1a] border border-[#1a1a1a] px-8 py-3 hover:bg-[#1a1a1a] hover:text-white transition-colors"
-                >
-                  {isFetchingNextPage ? "Loading..." : "Load more"}
-                </button>
-              </div>
-            )}
-          </>
-        ) : (
-          <GridView
-            products={products}
-            hasNextPage={hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
-            fetchNextPage={fetchNextPage}
-          />
-        )}
-      </div>
+    <div
+      className={`fixed bottom-2 left-2 right-2 md:left-auto md:bottom-auto md:top-[56px] z-50 flex items-center gap-2 transition-transform duration-300 ${
+        controlsVisible
+          ? "translate-y-0 md:translate-x-0"
+          : "translate-y-[calc(100%+8px)] md:translate-y-0 md:translate-x-[calc(100%+8px)]"
+      }`}
+    >
+      <SearchSortDrawer
+        open={sortDrawerOpen}
+        onOpenChange={setSortDrawerOpen}
+      />
+      <SearchFilterDrawer
+        open={filterDrawerOpen}
+        onOpenChange={setFilterDrawerOpen}
+      />
     </div>
   )
 }
 
-const GridView = ({
-  products,
-  hasNextPage,
-  isFetchingNextPage,
-  fetchNextPage
-}: {
-  products: HttpTypes.StoreProduct[]
-  hasNextPage: boolean | undefined
-  isFetchingNextPage: boolean
-  fetchNextPage: () => void
-}) => {
+const Store = () => {
   const { countryCode } = useLoaderData({ from: "/$countryCode/store" })
 
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => setIsMounted(true), [])
+
   return (
-    <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10 pt-8">
-        {products.map((product) => {
-          const firstVariant = product.variants?.[0] as HttpTypes.StoreProductVariant & { images?: { url: string }[] }
-          const variantImages = firstVariant?.images
-          const thumbnail = variantImages?.[0]?.url || product.thumbnail
-
-          return (
-            <a
-              key={product.id}
-              href={`/${countryCode}/products/${product.handle}`}
-              className="group flex flex-col"
-            >
-              <div className="aspect-square w-full overflow-hidden bg-[#f5f5f5] relative mb-3">
-                {thumbnail ? (
-                  <img
-                    src={thumbnail}
-                    alt={product.title}
-                    className="absolute inset-0 object-contain object-center w-full h-full p-4 group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-12 bg-[#e5e5e5]" />
-                  </div>
-                )}
-              </div>
-              <h3 className="text-[13px] font-medium text-[#1a1a1a] line-clamp-1">
-                {product.title}
-              </h3>
-            </a>
-          )
-        })}
-      </div>
-
-      {hasNextPage && (
-        <div className="flex justify-center mt-12">
-          <button
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="text-[13px] text-[#1a1a1a] border border-[#1a1a1a] px-8 py-3 hover:bg-[#1a1a1a] hover:text-white transition-colors"
-          >
-            {isFetchingNextPage ? "Loading..." : "Load more"}
-          </button>
-        </div>
+    <div className="bg-white min-h-screen overflow-x-hidden leading-none">
+      {isMounted ? (
+        <InstantSearch
+          indexName={PRODUCT_INDEX_NAME}
+          searchClient={searchClient as unknown as SearchClient}
+          routing={productSearchRouting}
+          future={{ preserveSharedStateOnUnmount: true }}
+        >
+          <Configure
+            hitsPerPage={STORE_HITS_PER_PAGE}
+            maxValuesPerFacet={MAX_VALUES_PER_FACET}
+          />
+          <PersistentRefinements />
+          <StoreResults countryCode={countryCode} />
+        </InstantSearch>
+      ) : (
+        <StoreShell />
       )}
-    </>
+    </div>
   )
 }
+
+const StoreShell = () => (
+  <>
+    <div className="w-full pt-12">
+      <div className="pt-4 px-4 pb-16 md:pt-8 md:px-8 md:pb-28">
+        <h1 className="text-[40px] md:text-[56px] font-normal text-[#1a1a1a] leading-[0.8] tracking-[-0.02em]">
+          All Products
+        </h1>
+      </div>
+    </div>
+    <div className="w-full pb-[160px]">
+      {Array.from({ length: 6 }, (_, index) => (
+        <ProductRowSkeleton key={`shell-skeleton-${index}`} />
+      ))}
+    </div>
+  </>
+)
 
 const ProductRowSkeleton = () => (
   <div className="border-b border-[#e5e5e5] py-6 px-8 animate-pulse">

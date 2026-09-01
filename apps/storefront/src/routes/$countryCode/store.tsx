@@ -1,8 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router"
 import { getRegion } from "@/lib/data/regions"
 import Store from "@/pages/store"
-import { listProducts } from "@/lib/data/products"
-import { HttpTypes } from "@medusajs/types"
 import { sanitize } from "@/lib/utils/sanitize"
 
 export const Route = createFileRoute("/$countryCode/store")({
@@ -19,22 +17,9 @@ export const Route = createFileRoute("/$countryCode/store")({
       throw notFound()
     }
 
-    const { products } = await queryClient.ensureQueryData({
-      queryKey: ["products", { region_id: region.id }],
-      queryFn: () => listProducts({
-        query_params: {
-          limit: 100, // Reduce limit for SSR performance
-          order: "-created_at",
-          fields: "+metadata, *variants.images"
-        },
-        region_id: region.id,
-      }),
-    })
-
     return sanitize({
       countryCode,
       region,
-      products: products as HttpTypes.StoreProduct[],
     })
   },
   head: ({ loaderData }) => {
