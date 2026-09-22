@@ -16,11 +16,13 @@ import { useClearRefinements, useCurrentRefinements } from "react-instantsearch"
 type SearchFilterDrawerProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  currencyCode: string
 }
 
 export const SearchFilterDrawer = ({
   open,
   onOpenChange,
+  currencyCode,
 }: SearchFilterDrawerProps) => {
   const { items } = useCurrentRefinements()
   const { canRefine: canClear, refine: clearAll } = useClearRefinements()
@@ -62,13 +64,13 @@ export const SearchFilterDrawer = ({
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto">
-          <OnSaleToggle />
+          <OnSaleToggle currencyCode={currencyCode} />
           <RefinementCheckboxList
             options={CATEGORY_REFINEMENT}
             title="Category"
           />
           <OptionValuesRefinement />
-          <PriceRangeRefinement />
+          <PriceRangeRefinement currencyCode={currencyCode} />
         </div>
 
         {canClear && (

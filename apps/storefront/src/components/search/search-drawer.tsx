@@ -29,10 +29,15 @@ const DEBOUNCE_MS = 250
 
 type SearchPanelProps = {
   countryCode: string
+  currencyCode: string
   onNavigate: () => void
 }
 
-const SearchPanel = ({ countryCode, onNavigate }: SearchPanelProps) => {
+const SearchPanel = ({
+  countryCode,
+  currencyCode,
+  onNavigate,
+}: SearchPanelProps) => {
   const timer = useRef<number | undefined>(undefined)
 
   const queryHook = useCallback(
@@ -108,6 +113,7 @@ const SearchPanel = ({ countryCode, onNavigate }: SearchPanelProps) => {
                 key={hit.objectID}
                 hit={hit}
                 countryCode={countryCode}
+                currencyCode={currencyCode}
                 onNavigate={onNavigate}
               />
             ))}
@@ -138,9 +144,14 @@ const SearchPanel = ({ countryCode, onNavigate }: SearchPanelProps) => {
 type SearchDrawerProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  currencyCode: string
 }
 
-export const SearchDrawer = ({ open, onOpenChange }: SearchDrawerProps) => {
+export const SearchDrawer = ({
+  open,
+  onOpenChange,
+  currencyCode,
+}: SearchDrawerProps) => {
   const location = useLocation()
   const countryCode = getCountryCodeFromPath(location.pathname) || "us"
 
@@ -160,6 +171,7 @@ export const SearchDrawer = ({ open, onOpenChange }: SearchDrawerProps) => {
           <Configure hitsPerPage={SEARCH_HITS_PER_PAGE} />
           <SearchPanel
             countryCode={countryCode}
+            currencyCode={currencyCode}
             onNavigate={() => onOpenChange(false)}
           />
         </InstantSearch>

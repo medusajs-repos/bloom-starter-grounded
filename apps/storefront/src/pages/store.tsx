@@ -31,7 +31,13 @@ const DEBOUNCE_MS = 250
 
 const MAX_VALUES_PER_FACET = 200
 
-const StoreResults = ({ countryCode }: { countryCode: string }) => {
+const StoreResults = ({
+  countryCode,
+  currencyCode,
+}: {
+  countryCode: string
+  currencyCode: string
+}) => {
   const timer = useRef<number | undefined>(undefined)
 
   const queryHook = useCallback(
@@ -63,7 +69,7 @@ const StoreResults = ({ countryCode }: { countryCode: string }) => {
 
   return (
     <>
-      <StoreControls />
+      <StoreControls currencyCode={currencyCode} />
 
       <div className="w-full pt-12">
         <div className="pt-4 px-4 pb-6 md:pt-8 md:px-8">
@@ -96,7 +102,7 @@ const StoreResults = ({ countryCode }: { countryCode: string }) => {
         </div>
       </div>
 
-      <AppliedRefinements />
+      <AppliedRefinements currencyCode={currencyCode} />
 
       <div className="w-full pb-[160px]">
         {status === "error" ? (
@@ -117,6 +123,7 @@ const StoreResults = ({ countryCode }: { countryCode: string }) => {
                   key={hit.objectID}
                   hit={hit}
                   countryCode={countryCode}
+                  currencyCode={currencyCode}
                   isLast={index === items.length - 1}
                 />
               ))}
@@ -147,7 +154,7 @@ const StoreResults = ({ countryCode }: { countryCode: string }) => {
   )
 }
 
-const StoreControls = () => {
+const StoreControls = ({ currencyCode }: { currencyCode: string }) => {
   const [controlsVisible, setControlsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
   const [sortDrawerOpen, setSortDrawerOpen] = useState(false)
@@ -180,17 +187,20 @@ const StoreControls = () => {
       <SearchSortDrawer
         open={sortDrawerOpen}
         onOpenChange={setSortDrawerOpen}
+        currencyCode={currencyCode}
       />
       <SearchFilterDrawer
         open={filterDrawerOpen}
         onOpenChange={setFilterDrawerOpen}
+        currencyCode={currencyCode}
       />
     </div>
   )
 }
 
 const Store = () => {
-  const { countryCode } = useLoaderData({ from: "/$countryCode/store" })
+  const { countryCode, region } = useLoaderData({ from: "/$countryCode/store" })
+  const currencyCode = region.currency_code
 
   const [isMounted, setIsMounted] = useState(false)
 
@@ -209,8 +219,8 @@ const Store = () => {
             hitsPerPage={STORE_HITS_PER_PAGE}
             maxValuesPerFacet={MAX_VALUES_PER_FACET}
           />
-          <PersistentRefinements />
-          <StoreResults countryCode={countryCode} />
+          <PersistentRefinements currencyCode={currencyCode} />
+          <StoreResults countryCode={countryCode} currencyCode={currencyCode} />
         </InstantSearch>
       ) : (
         <StoreShell />

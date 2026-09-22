@@ -1,4 +1,4 @@
-import { PRODUCT_INDEX_NAME } from "@/lib/search-client"
+import { PRODUCT_INDEX_NAME, priceAttribute } from "@/lib/search-client"
 import type {
   UseRangeProps,
   UseRefinementListProps,
@@ -20,25 +20,31 @@ export const OPTION_VALUES_REFINEMENT: UseRefinementListProps = {
   sortBy: ["name:asc"],
 }
 
-export const ON_SALE_REFINEMENT: UseToggleRefinementProps = {
-  attribute: "on_sale",
+export const onSaleRefinement = (
+  currencyCode: string
+): UseToggleRefinementProps => ({
+  attribute: priceAttribute("on_sale", currencyCode),
   on: true,
-}
+})
 
-export const PRICE_REFINEMENT: UseRangeProps = {
-  attribute: "min_price",
-}
+export const priceRefinement = (currencyCode: string): UseRangeProps => ({
+  attribute: priceAttribute("min_price", currencyCode),
+})
 
 const sortValue = (field: string, direction: "asc" | "desc") =>
   `${PRODUCT_INDEX_NAME}/sort/${field}:${direction}`
 
-export const SORT_BY_REFINEMENT: UseSortByProps = {
-  items: [
-    { label: "Relevance", value: PRODUCT_INDEX_NAME },
-    { label: "Price, low to high", value: sortValue("min_price", "asc") },
-    { label: "Price, high to low", value: sortValue("min_price", "desc") },
-    { label: "Newest first", value: sortValue("created_at", "desc") },
-    { label: "Alphabetically, A-Z", value: sortValue("title", "asc") },
-    { label: "Alphabetically, Z-A", value: sortValue("title", "desc") },
-  ],
+export const sortByRefinement = (currencyCode: string): UseSortByProps => {
+  const minPrice = priceAttribute("min_price", currencyCode)
+
+  return {
+    items: [
+      { label: "Relevance", value: PRODUCT_INDEX_NAME },
+      { label: "Price, low to high", value: sortValue(minPrice, "asc") },
+      { label: "Price, high to low", value: sortValue(minPrice, "desc") },
+      { label: "Newest first", value: sortValue("created_at", "desc") },
+      { label: "Alphabetically, A-Z", value: sortValue("title", "asc") },
+      { label: "Alphabetically, Z-A", value: sortValue("title", "desc") },
+    ],
+  }
 }

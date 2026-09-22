@@ -1,45 +1,52 @@
 import { formatPrice } from "@/lib/utils/price"
+import { hitPricing } from "@/lib/utils/search-pricing"
 import { Link } from "@tanstack/react-router"
 import type { Hit as HitType } from "instantsearch.js"
 
-export type StoreProductHit = HitType<{
-  title: string | null
-  handle: string | null
-  thumbnail: string | null
-  category?: string[]
-  currency_code?: string
-  min_price?: number
-  original_price?: number
-  on_sale?: boolean
-}>
+export type StoreProductHit = HitType<
+  {
+    title: string | null
+    handle: string | null
+    thumbnail: string | null
+    category?: string[]
+  } & Record<string, unknown>
+>
 
 type StoreHitRowProps = {
   hit: StoreProductHit
   countryCode: string
+  currencyCode: string
   isLast?: boolean
 }
 
-export const StoreHitRow = ({ hit, countryCode, isLast }: StoreHitRowProps) => {
+export const StoreHitRow = ({
+  hit,
+  countryCode,
+  currencyCode,
+  isLast,
+}: StoreHitRowProps) => {
   if (!hit.handle) {
     return null
   }
 
   const title = hit.title ?? ""
-  const currencyCode = hit.currency_code || "usd"
+  const pricing = hitPricing(hit, currencyCode)
+  const format = (amount: number) =>
+    formatPrice({ amount, currency_code: pricing.currency_code })
+
+  const max = pricing.max_price ?? pricing.min_price
+  const isRange = pricing.min_price !== null && (max ?? 0) > pricing.min_price
+
   const price =
-    typeof hit.min_price === "number"
-      ? formatPrice({ amount: hit.min_price, currency_code: currencyCode })
-      : null
+    pricing.min_price === null
+      ? null
+      : isRange
+        ? `${format(pricing.min_price)} - ${format(max as number)}`
+        : format(pricing.min_price)
+  // A range already spans the discount, so the struck-through original would
+  // describe only the cheapest variant.
   const originalPrice =
-    hit.on_sale === true &&
-    typeof hit.original_price === "number" &&
-    typeof hit.min_price === "number" &&
-    hit.original_price > hit.min_price
-      ? formatPrice({
-          amount: hit.original_price,
-          currency_code: currencyCode,
-        })
-      : null
+    !isRange && pricing.on_sale ? format(pricing.original_price as number) : null
 
   return (
     <Link

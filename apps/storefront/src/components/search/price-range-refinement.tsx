@@ -1,12 +1,17 @@
-import { PRICE_REFINEMENT } from "@/components/search/refinement-config"
+import { priceRefinement } from "@/components/search/refinement-config"
+import { indexedCurrency } from "@/lib/search-client"
 import { formatPrice } from "@/lib/utils/price"
 import { useEffect, useState } from "react"
 import { useRange } from "react-instantsearch"
 
-const INDEX_CURRENCY_CODE = "usd"
-
-export const PriceRangeRefinement = () => {
-  const { start, range, canRefine, refine } = useRange(PRICE_REFINEMENT)
+export const PriceRangeRefinement = ({
+  currencyCode,
+}: {
+  currencyCode: string
+}) => {
+  const { start, range, canRefine, refine } = useRange(
+    priceRefinement(currencyCode)
+  )
 
   const [min, max] = start
   const boundsMin = range.min
@@ -57,7 +62,7 @@ export const PriceRangeRefinement = () => {
           onBlur={commit}
           placeholder={formatPrice({
             amount: boundsMin,
-            currency_code: INDEX_CURRENCY_CODE,
+            currency_code: indexedCurrency(currencyCode),
             maximumFractionDigits: 0,
           })}
           aria-label="Minimum price"
@@ -78,7 +83,7 @@ export const PriceRangeRefinement = () => {
           onBlur={commit}
           placeholder={formatPrice({
             amount: boundsMax,
-            currency_code: INDEX_CURRENCY_CODE,
+            currency_code: indexedCurrency(currencyCode),
             maximumFractionDigits: 0,
           })}
           aria-label="Maximum price"

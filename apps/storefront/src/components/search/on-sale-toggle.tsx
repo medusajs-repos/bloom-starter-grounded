@@ -1,9 +1,9 @@
-import { ON_SALE_REFINEMENT } from "@/components/search/refinement-config"
+import { onSaleRefinement } from "@/components/search/refinement-config"
 import { clsx } from "clsx"
 import { useToggleRefinement } from "react-instantsearch"
 
-export const OnSaleToggle = () => {
-  const { value, refine } = useToggleRefinement(ON_SALE_REFINEMENT)
+export const OnSaleToggle = ({ currencyCode }: { currencyCode: string }) => {
+  const { value, refine } = useToggleRefinement(onSaleRefinement(currencyCode))
 
   return (
     <button

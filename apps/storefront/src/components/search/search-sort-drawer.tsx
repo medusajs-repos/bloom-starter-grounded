@@ -5,20 +5,24 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
-import { SORT_BY_REFINEMENT } from "@/components/search/refinement-config"
+import { sortByRefinement } from "@/components/search/refinement-config"
 import { XMark } from "@medusajs/icons"
 import { useSortBy } from "react-instantsearch"
 
 type SearchSortDrawerProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  currencyCode: string
 }
 
 export const SearchSortDrawer = ({
   open,
   onOpenChange,
+  currencyCode,
 }: SearchSortDrawerProps) => {
-  const { currentRefinement, options, refine } = useSortBy(SORT_BY_REFINEMENT)
+  const { currentRefinement, options, refine } = useSortBy(
+    sortByRefinement(currencyCode)
+  )
 
   const currentLabel =
     options.find((option) => option.value === currentRefinement)?.label ??

@@ -1,36 +1,36 @@
 import { Price } from "@/components/ui/price"
 import { getPricePercentageDiff } from "@/lib/utils/price"
+import { hitPricing } from "@/lib/utils/search-pricing"
 import { Link } from "@tanstack/react-router"
 import type { Hit as HitType } from "instantsearch.js"
 
-export type ProductHit = HitType<{
-  title: string | null
-  handle: string | null
-  thumbnail: string | null
-  currency_code?: string
-  min_price?: number
-  original_price?: number
-  on_sale?: boolean
-}>
+export type ProductHit = HitType<
+  {
+    title: string | null
+    handle: string | null
+    thumbnail: string | null
+  } & Record<string, unknown>
+>
 
 type SearchHitProps = {
   hit: ProductHit
   countryCode: string
+  currencyCode: string
   onNavigate: () => void
 }
 
-export const SearchHit = ({ hit, countryCode, onNavigate }: SearchHitProps) => {
+export const SearchHit = ({
+  hit,
+  countryCode,
+  currencyCode,
+  onNavigate,
+}: SearchHitProps) => {
   if (!hit.handle) {
     return null
   }
 
   const title = hit.title ?? ""
-  const hasPrice = typeof hit.min_price === "number"
-  const isDiscounted =
-    hit.on_sale === true &&
-    typeof hit.original_price === "number" &&
-    typeof hit.min_price === "number" &&
-    hit.original_price > hit.min_price
+  const pricing = hitPricing(hit, currencyCode)
 
   return (
     <Link
@@ -59,20 +59,20 @@ export const SearchHit = ({ hit, countryCode, onNavigate }: SearchHitProps) => {
         <h3 className="text-[13px] font-medium text-[var(--color-grounded-text)] line-clamp-1 group-hover:text-[var(--color-grounded-gray)] transition-colors">
           {title}
         </h3>
-        {hasPrice && (
+        {pricing.min_price !== null && (
           <Price
-            price={hit.min_price as number}
-            currencyCode={hit.currency_code || "usd"}
+            price={pricing.min_price}
+            currencyCode={pricing.currency_code}
             type="range"
             textSize="small"
             className="text-[var(--color-grounded-gray)]"
             originalPrice={
-              isDiscounted
+              pricing.on_sale
                 ? {
-                    price: hit.original_price as number,
+                    price: pricing.original_price as number,
                     percentage: getPricePercentageDiff(
-                      hit.original_price as number,
-                      hit.min_price as number
+                      pricing.original_price as number,
+                      pricing.min_price
                     ),
                   }
                 : undefined

@@ -14,6 +14,7 @@ import { useNavbar } from "@/lib/hooks/use-navbar"
 import { useCategories } from "@/lib/hooks/use-categories"
 import { useProductCount } from "@/lib/hooks/use-products"
 import { useRegion } from "@/lib/hooks/use-regions"
+import { SEARCH_PRICE_CURRENCIES } from "@/lib/search-client"
 import { getCountryCodeFromPath } from "@/lib/utils/region"
 import { Link, useLocation } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
@@ -241,7 +242,11 @@ export const Navbar = () => {
         </nav>
       </header>
 
-      <SearchDrawer open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+      <SearchDrawer
+        open={isSearchOpen}
+        onOpenChange={setIsSearchOpen}
+        currencyCode={region?.currency_code ?? SEARCH_PRICE_CURRENCIES[0]}
+      />
     </div>
   )
 }
